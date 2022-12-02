@@ -2,6 +2,8 @@
 const express = require("express");
 const bodyParser = require('body-parser');
 
+// routers
+const authRouter = require('./routes/authController');
 
 //initialize server
 const app = express();
@@ -20,6 +22,19 @@ app.use((req,res,next)=>{
     next();
 
 })
+//routes
+    //login
+app.use('/auth',authRouter);
+
+//errors
+app.use((error, req, res, next) => {
+    console.log(error);
+    const status = error.statusCode || 500;
+    const message = error.message;
+    const data = error.data;
+    res.status(status).json({ message: message ,data:data});
+});
+
 
 
 
