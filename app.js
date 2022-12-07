@@ -4,7 +4,8 @@ const bodyParser = require('body-parser');
 
 // routers
 const authRouter = require('./routes/authController');
-
+const productsRouter = require('./routes/products');
+const orderRouter = require('./routes/order');
 //initialize server
 const app = express();
 //initialize server's port
@@ -25,6 +26,8 @@ app.use((req,res,next)=>{
 //routes
     //login
 app.use('/auth',authRouter);
+app.use('/products',productsRouter)
+app.use('/michelin',orderRouter);
 
 //errors
 app.use((error, req, res, next) => {
