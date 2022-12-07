@@ -16,9 +16,10 @@ exports.xmlReq = async (req,res,next) => {
             }
             const json =JSON.parse( JSON.stringify(results,null,4));
            // console.log(json)
+          //  res.status(200).json({json})
             const response = await this.buetifyResponse(json);
-            // console.log(response)
-            // console.log(json.quote.OrderLine[0].OrderedArticle[0].ArticleDescription[0].ArticleDescriptionText[0])
+            console.log(response)
+            console.log(json.quote.OrderLine[0].OrderedArticle[0].ArticleDescription[0].ArticleDescriptionText[0])
             res.status(200).json(
                 {
                     message:"Response",
@@ -81,20 +82,20 @@ exports.getOrderLine = (cai,qty) =>{
 exports.getBody =(cai,qty) =>{
 
         return `
-            <?xml version="1.0" encoding="UTF-8"?>
-        <inquiry>
-        <DocumentID>C1</DocumentID>
-        <Variant>0</Variant>
-        <TransportPriority>REPL</TransportPriority>
-        <Campaign></Campaign>
-        <CustomerReference>
-        <DocumentID>Test001</DocumentID>
-        </CustomerReference>
-        <BuyerParty>
-        <PartyID>Q0040950</PartyID>
-        <AgencyCode>91</AgencyCode>
-        </BuyerParty>${this.getOrderLine(cai,qty)}
-        </inquiry>
+         <?xml version="1.0" encoding="UTF-8"?>
+            <inquiry>
+                <DocumentID>C1</DocumentID>
+                <Variant>0</Variant>
+                <TransportPriority>REPL</TransportPriority>
+                <Campaign></Campaign>
+                <CustomerReference>
+                <DocumentID>Test001</DocumentID>
+                </CustomerReference>
+                <BuyerParty>
+                    <PartyID>Q0040950</PartyID>
+                    <AgencyCode>91</AgencyCode>
+                </BuyerParty>${this.getOrderLine(cai,qty)}
+            </inquiry>
         `
 
 }
@@ -104,12 +105,12 @@ exports.michelinConnection =async (body)=>{
           headers: {
               'Content-Type': 'text/xml;charset=utf-8',
               'Accept':'text/xml',
-              'Authorization':'Basic TVdHMjExMzpNaWNoZWxpbj0x',
+              'Authorization':'Basic TVdHMjExMzpBRCs5NWZlUg==',
               'Message-Type' : 'inquiry'
 
           }
         };
-     let req =await axios.post('https://bibserve-indus.michelin.com/eb3/C1/AdhocServlet',body,config)
+     let req =await axios.post('https://bibserve.com/eb3/C1/AdhocServlet',body,config)
 
 
                 return req.data;
@@ -124,17 +125,14 @@ exports.buetifyResponse = (response )=>{
             availables.push({
                 'avaliable' : response.quote.OrderLine[i].OrderedArticle[0].Availability[0]
             });
-            console.log(response.quote.OrderLine[i].OrderedArticle[0].ScheduleDetails);
-
-                deliveryDates.push( {
-                    delivery_dates : response.quote.OrderLine[0].OrderedArticle[0].ScheduleDetails[0].DeliveryDate[0],
-                    quantity_valiue : response.quote.OrderLine[0].OrderedArticle[0].ScheduleDetails[0].AvailableQuantity[0].QuantityValue[0]
-                })
-
-
-
-
-    }
+            console.log(response.quote.OrderLine[0].OrderedArticle[0].ScheduleDetails)
+                for(let j = 0; j < response.quote.OrderLine[0].OrderedArticle[0].ScheduleDetails.length ; j++ ) {
+                    deliveryDates.push({
+                        delivery_dates: response.quote.OrderLine[i].OrderedArticle[i].ScheduleDetails[j].DeliveryDate[0],
+                        quantity_valiue: response.quote.OrderLine[i].OrderedArticle[i].ScheduleDetails[j].AvailableQuantity[0].QuantityValue[0]
+                    })
+                }
+        }
     returnData = {
         availability : availables,
         delivery_dates : deliveryDates
