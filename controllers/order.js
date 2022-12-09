@@ -6,7 +6,6 @@ exports.xmlReq = async (req,res,next) => {
     const cai = req.body.cai;
     const qty = req.body.qty;
     const name ='%'+ req.body.name+'%';
-    console.log(name);
     if(name != "%undefined%"){
 
         let names = await database.execute('select * from products where name LIKE ?',[name])
@@ -62,10 +61,10 @@ exports.findProduct = async (cai,next) =>{
                  name: products[0][0].name,
                  cai: products[0][0].cai,
                  tipos_elastikou: products[0][0].tupos_elastikou,
-                 omada: await this.findOmada( products[0][0].omada),
+                 omada: await this.findOmada(products[0][0].omada),
                  marka: await this.findMarka(products[0][0].marka),
-                 zanta:await this.findZanta( products[0][0].zanta),
-                 epoxi:await this.findEpoxi( products[0][0].epoxi),
+                 zanta:await this.findZanta(products[0][0].zanta),
+                 epoxi:await this.findEpoxi(products[0][0].epoxi),
                  upddate: products[0][0].upddate,
                  apothema_thess: products[0][0].apothema_thess,
                  apothema_athens: products[0][0].apothema_athens,
