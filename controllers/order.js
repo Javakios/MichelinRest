@@ -19,9 +19,16 @@ exports.xmlReq = async (req,res,next) => {
                 message:"products",
                 product:return_prods,
                 name :'name',
-                dates : [],
-                qtys_on_date : [],
-                response : []
+                response : {
+                    availability: {
+                        available:''
+                    },
+                    delivery_dates: {
+                        delivery_dates:'',
+                        quantity_valiue:''
+                    }
+
+                }
             });
         }catch (error) {
             throw error;
