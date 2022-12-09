@@ -62,10 +62,10 @@ exports.findProduct = async (cai,next) =>{
                  name: products[0][0].name,
                  cai: products[0][0].cai,
                  tipos_elastikou: products[0][0].tupos_elastikou,
-                 omada: products[0][0].omada,
-                 marka: products[0][0].marka,
-                 zanta: products[0][0].zanta,
-                 epoxi: products[0][0].epoxi,
+                 omada: await this.findOmada( products[0][0].omada),
+                 marka: await this.findMarka(products[0][0].marka),
+                 zanta:await this.findZanta( products[0][0].zanta),
+                 epoxi:await this.findEpoxi( products[0][0].epoxi),
                  upddate: products[0][0].upddate,
                  apothema_thess: products[0][0].apothema_thess,
                  apothema_athens: products[0][0].apothema_athens,
@@ -157,5 +157,39 @@ exports.buetifyResponse = (response )=>{
     }
     return returnData;
 
+}
+
+exports.findOmada = async(omada) =>{
+    let findOmada = await database.execute('select * from group_categories where group_id=?',[omada])
+    try{
+        return findOmada[0][0].name
+    }catch (e) {
+        throw e;
+    }
+}
+exports.findMarka = async (marka) =>{
+    let findMarka = await database.execute('select * from mark where mark_id=?',[marka])
+    try{
+        return findMarka[0][0].name
+    }catch (e) {
+        throw e;
+    }
+}
+exports.findZanta = async (zanta)=>{
+    let findZanta = await database.execute('select * from manfctr where manfctr_id=?',[zanta])
+    try{
+        return findZanta[0][0].name
+    }catch (e) {
+        throw e;
+    }
+}
+
+exports.findEpoxi = async (epoxi)=>{
+    let findEpoxi = await database.execute('select * from model where model_id=?',[epoxi])
+    try{
+        return findEpoxi[0][0].name
+    }catch (e) {
+        throw e;
+    }
 }
 
