@@ -17,18 +17,7 @@ exports.xmlReq = async (req,res,next) => {
             }
             res.status(200).json({
                 message:"products",
-                product:return_prods,
-                name :'name',
-                response : {
-                    availability: {
-                        available:''
-                    },
-                    delivery_dates: {
-                        delivery_dates:'',
-                        quantity_valiue:''
-                    }
-
-                }
+                product:return_prods
             });
         }catch (error) {
             throw error;
