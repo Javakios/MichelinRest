@@ -15,7 +15,14 @@ exports.xmlReq = async (req,res,next) => {
             for(let i = 0; i < names[0].length; i++){
                 return_prods.push(await this.findProduct(names[0][i].cai,next));
             }
-            res.status(200).json({message:"products",product:return_prods});
+            res.status(200).json({
+                message:"products",
+                product:return_prods,
+                name :'name',
+                dates : [],
+                qtys_on_date : [],
+                response : []
+            });
         }catch (error) {
             throw error;
         }
