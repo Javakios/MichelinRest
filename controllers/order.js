@@ -5,10 +5,20 @@ const xml = require('xml2js');
 exports.xmlReq = async (req,res,next) => {
     const cai = req.body.cai;
     const qty = req.body.qty;
-
-    if (!cai || !qty) {
-        res.status(402).json({message: "fill the required fields"});
-    } else {
+    const name ='%'+ req.body.name+'%';
+    if(name && qty){
+        let names = await database.execute('select * from products where name LIKE ?',[name])
+        try{
+            let return_prods =[];
+            for(let i = 0; i < names[0].length; i++){
+                return_prods.push(await this.findProduct(names[0][i].cai,next));
+            }
+            res.status(200).json({message:"products",product:return_prods});
+        }catch (error) {
+            throw error;
+        }
+    }
+     else if(cai && qty) {
 
         xml.parseString(await this.michelinConnection(this.getBody(cai,qty)),async(err,results)=>{
             if(err){
@@ -31,6 +41,8 @@ exports.xmlReq = async (req,res,next) => {
         })
 
 
+    }else{
+         res.status(402).json({message:"fill the required fields"})
     }
 }
 
