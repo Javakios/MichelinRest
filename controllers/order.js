@@ -6,7 +6,9 @@ exports.xmlReq = async (req,res,next) => {
     const cai = req.body.cai;
     const qty = req.body.qty;
     const name ='%'+ req.body.name+'%';
-    if(name && qty){
+    console.log(name);
+    if(name != "%undefined%"){
+
         let names = await database.execute('select * from products where name LIKE ?',[name])
         try{
             let return_prods =[];
