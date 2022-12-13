@@ -65,14 +65,16 @@ exports.fetchCart = (req,res,next) =>{
     const trdr= req.body.trdr;
     if(!trdr){
         res.status(200).json({message:"fill the required fields"})
+    }else {
+        database.execute('select * from cart where trdr=?', [trdr])
+            .then(async products => {
+                let returnProds = [];
+                for (let i = 0; i < products[0].length; i++) {
+                    returnProds[i] = await this.getSingleCartItem(products[0][i]);
+                }
+                res.status(200).json({message:"products",products:returnProds});
+            })
     }
-    database.execute('select * from cart where trdr=?',[trdr])
-        .then(async products=>{
-            let returnProds = [];
-            for(let i = 0 ; i < products[0].length; i++){
-                returnProds[i] = await this.getSingleCartItem(products[0][i]);
-            }
-        })
 }
 exports.getSingleCartItem =async (singelProduct) =>{
     let products = await database.execute('select * from products where mtrl=?',[singelProduct.mtrl])
