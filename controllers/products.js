@@ -61,3 +61,78 @@ exports.addToCart = (req,res,next) =>{
             })
     }
 }
+exports.fetchCart = (req,res,next) =>{
+    const trdr= req.body.trdr;
+    if(!trdr){
+        res.status(200).json({message:"fill the required fields"})
+    }
+    database.execute('select * from cart where trdr=?',[trdr])
+        .then(async products=>{
+            let returnProds = [];
+            for(let i = 0 ; i < products[0].length; i++){
+                returnProds[i] = await this.getSingleCartItem(products[0][i]);
+            }
+        })
+}
+exports.getSingleCartItem =async (singelProduct) =>{
+    let products = await database.execute('select * from products where mtrl=?',[singelProduct.mtrl])
+    return {
+        mtrl: products[0][0].mtrl,
+        code: products[0][0].code,
+        name: products[0][0].name,
+        cai: products[0][0].cai,
+        tipos_elastikou: products[0][0].tupos_elastikou,
+        omada: await this.findOmada(products[0][0].omada),
+        marka: await this.findMarka(products[0][0].marka),
+        zanta:await this.findZanta(products[0][0].zanta),
+        epoxi:await this.findEpoxi(products[0][0].epoxi),
+        upddate: products[0][0].upddate,
+        apothema_thess: products[0][0].apothema_thess,
+        apothema_athens: products[0][0].apothema_athens,
+        price: products[0][0].price,
+        offer: products[0][0].offer,
+        discount: products[0][0].discount,
+        image: products[0][0].image,
+        qty : singelProduct.qty,
+        date: singelProduct.dates,
+        availability : singelProduct.availability
+    }
+}
+
+
+
+
+exports.findOmada = async(omada) =>{
+    let findOmada = await database.execute('select * from group_categories where group_id=?',[omada])
+    try{
+        return findOmada[0][0].name
+    }catch (e) {
+        throw e;
+    }
+}
+exports.findMarka = async (marka) =>{
+    let findMarka = await database.execute('select * from mark where mark_id=?',[marka])
+    try{
+        return findMarka[0][0].name
+    }catch (e) {
+        throw e;
+    }
+}
+exports.findZanta = async (zanta)=>{
+    let findZanta = await database.execute('select * from manfctr where manfctr_id=?',[zanta])
+    try{
+        return findZanta[0][0].name
+    }catch (e) {
+        throw e;
+    }
+}
+
+exports.findEpoxi = async (epoxi)=>{
+    let findEpoxi = await database.execute('select * from model where model_id=?',[epoxi])
+    try{
+        console.log(findEpoxi[0][0].name)
+        return findEpoxi[0][0].name
+    }catch (e) {
+        throw e;
+    }
+}
