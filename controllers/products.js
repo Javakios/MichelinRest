@@ -46,7 +46,7 @@ exports.addToCart = (req,res,next) =>{
         database.execute('select * from cart where mtrl=? and trdr=?',[mtrl,trdr])
             .then(async results =>{
                 if(results[0].length > 0){
-                    let update = await database.execute('update cart set availability=?,dates=?,qty=?+qty where mtrl=? and trdr=?',[avail,dates,qty,mtrl,trdr])
+                    let update = await database.execute('update cart set availability=?,dates=?,qty=? where mtrl=? and trdr=?',[avail,dates,qty,mtrl,trdr])
                     res.status(200).json({message:"product updated"})
                 }else{
                     let insert = await database.execute('insert into cart (mtrl,trdr,qty,availability,dates) VALUES (?,?,?,?,?)',
