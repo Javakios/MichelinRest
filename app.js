@@ -9,7 +9,7 @@ const orderRouter = require('./routes/order');
 //initialize server
 const app = express();
 //initialize server's port
-const port = 3000;
+const port = 3001;
 //headers
 app.use(bodyParser.json());
 app.use((req,res,next)=>{

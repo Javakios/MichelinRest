@@ -6,12 +6,14 @@ exports.xmlReq = async (req,res,next) => {
     const cai = req.body.cai;
     const qty = req.body.qty;
     const name = req.body.name;
+    console.log(name);
     if(name){
         let newName = "%"+name+"%";
-        let names = await database.execute('select * from products where name LIKE ?',[newName])
+        let names = await database.execute('select cai from products where name LIKE ?',[newName])
         try{
             let return_prods =[];
             for(let i = 0; i < names[0].length; i++){
+                console.log(names[0][i])
                 return_prods.push(await this.findProduct(names[0][i].cai,next));
             }
             res.status(200).json({
@@ -55,6 +57,8 @@ exports.findProduct = async (cai,next) =>{
 
       let products=await database.execute('select * from products where cai = ?',[cai])
          try {
+            console.log(products[0][0]);
+            console.log(products[0][0].name)
              return {
                  mtrl: products[0][0].mtrl,
                  code: products[0][0].code,
@@ -74,7 +78,7 @@ exports.findProduct = async (cai,next) =>{
                  image: products[0][0].image
              }
          }catch(err){
-          next(err);
+          throw err;
          }
 }
 exports.getOrderLine = (cai,qty) =>{
@@ -186,6 +190,7 @@ exports.findZanta = async (zanta)=>{
 exports.findEpoxi = async (epoxi)=>{
     let findEpoxi = await database.execute('select * from model where model_id=?',[epoxi])
     try{
+        console.log(findEpoxi[0][0].name)
         return findEpoxi[0][0].name
     }catch (e) {
         throw e;

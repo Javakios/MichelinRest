@@ -31,7 +31,33 @@ exports.getAllProducts = (req,res,next) =>{
             if(!err.statusCode) err.statusCode = 500;
             next(err);
         })
+}
 
+exports.addToCart = (req,res,next) =>{
+    const mtrl = req.body.mtrl;
+    const trdr = req.body.trdr;
+    const qty = req.body.trdr;
+    const avail = req.body.availability;
+    const dates = req.body.dates;
 
-
+    if(!mtrl || !trdr || !qty || !avail || !dates ){
+        res.status(402).json({message:"Fill The Required Fields"});
+    }else{
+        database.execute('select * from cart where mtrl=? and trdr=?',[mtrl,trdr])
+            .then(async results =>{
+                if(results[0].length > 0){
+                    let update = await database.execute('update cart set availability=?,dates=?,qty=?+qty where mtrl=? and trdr=?',[avail,dates,qty,mtrl,trdr])
+                    res.status(200).json({message:"product updated"})
+                }else{
+                    let insert = await database.execute('insert into cart (mtrl,trdr,qty,availability,dates) VALUES (?,?,?,?,?)',
+                        [mtrl,trdr,qty,avail,dates]
+                        )
+                    res.status(200).json({message:"product inserted"});
+                }
+            })
+            .catch(err=>{
+                if(!err.statusCode) err.statusCode = 500;
+                next(err);
+            })
+    }
 }
