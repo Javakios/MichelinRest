@@ -36,7 +36,7 @@ exports.getAllProducts = (req,res,next) =>{
 exports.addToCart = (req,res,next) =>{
     const mtrl = req.body.mtrl;
     const trdr = req.body.trdr;
-    const qty = req.body.trdr;
+    const qty = req.body.qty;
     const avail = req.body.availability;
     const dates = req.body.dates;
 
