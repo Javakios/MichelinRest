@@ -53,7 +53,7 @@ exports.addToCart = (req, res, next) => {
          let qty_on_dates=[];
          for(let i = 0 ; i < data.length;i++){
              datesarr[i] = data[i].dates;
-             qty_on_dates[i] = data[i].qty_on_dates
+             qty_on_dates[i] = data[i].qty_on_date
          }
         if (results[0].length > 0) {
           let update = await database.execute(
