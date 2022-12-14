@@ -57,26 +57,47 @@ exports.findProduct = async (cai,next) =>{
 
       let products=await database.execute('select * from products where cai = ?',[cai])
          try {
-            console.log(products[0][0]);
-            console.log(products[0][0].name)
-             return {
-                 mtrl: products[0][0].mtrl,
-                 code: products[0][0].code,
-                 name: products[0][0].name,
-                 cai: products[0][0].cai,
-                 tipos_elastikou: products[0][0].tupos_elastikou,
-                 omada: await this.findOmada(products[0][0].omada),
-                 marka: await this.findMarka(products[0][0].marka),
-                 zanta:await this.findZanta(products[0][0].zanta),
-                 epoxi:await this.findEpoxi(products[0][0].epoxi),
-                 upddate: products[0][0].upddate,
-                 apothema_thess: products[0][0].apothema_thess,
-                 apothema_athens: products[0][0].apothema_athens,
-                 price: products[0][0].price,
-                 offer: products[0][0].offer,
-                 discount: products[0][0].discount,
-                 image: products[0][0].image
-             }
+          if(products[0].length > 0) {
+              console.log(products[0][0]);
+              console.log(products[0][0].name)
+              return {
+                  mtrl: products[0][0].mtrl,
+                  code: products[0][0].code,
+                  name: products[0][0].name,
+                  cai: products[0][0].cai,
+                  tipos_elastikou: products[0][0].tupos_elastikou,
+                  omada: await this.findOmada(products[0][0].omada),
+                  marka: await this.findMarka(products[0][0].marka),
+                  zanta: await this.findZanta(products[0][0].zanta),
+                  epoxi: await this.findEpoxi(products[0][0].epoxi),
+                  upddate: products[0][0].upddate,
+                  apothema_thess: products[0][0].apothema_thess,
+                  apothema_athens: products[0][0].apothema_athens,
+                  price: products[0][0].price,
+                  offer: products[0][0].offer,
+                  discount: products[0][0].discount,
+                  image: products[0][0].image
+              }
+          }else {
+              return {
+                  mtrl:"" ,
+                  code:"" ,
+                  name:"" ,
+                  cai: "",
+                  tipos_elastikou:"",
+                  omada: "",
+                  marka: "",
+                  zanta: "",
+                  epoxi: "",
+                  upddate:"",
+                  apothema_thess: "",
+                  apothema_athens:"",
+                  price: "",
+                  offer: "",
+                  discount: "",
+                  image: ""
+              }
+          }
          }catch(err){
           throw err;
          }
