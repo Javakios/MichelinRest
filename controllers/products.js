@@ -113,7 +113,8 @@ exports.getSingleCartItem =async (singelProduct) =>{
             image: products[0][0].image,
             qty: singelProduct.qty,
             date: singelProduct.dates,
-            availability: singelProduct.availability
+            availability: singelProduct.availability,
+            qty_on_dates : singelProduct.qtys_on_dates
         }
     }else{
         return {
@@ -135,7 +136,8 @@ exports.getSingleCartItem =async (singelProduct) =>{
             image: "",
             qty: "",
             date: "",
-            availability:""
+            availability:"",
+            qty_on_dates:""
         }
     }
 

@@ -147,12 +147,12 @@ exports.michelinConnection =async (body)=>{
           headers: {
               'Content-Type': 'text/xml;charset=utf-8',
               'Accept':'text/xml',
-              'Authorization':'Basic TVdHMjExMzpBRCs5NWZlUg==',
+              'Authorization':'Basic TVdHMjExMzpNaWNoZWxpbj0x',
               'Message-Type' : 'inquiry'
 
           }
         };
-     let req =await axios.post('https://bibserve.com/eb3/C1/AdhocServlet',body,config)
+     let req =await axios.post('https://bibserve-indus.michelin.com/eb3/C1/AdhocServlet',body,config)
 
 
                 return req.data;
