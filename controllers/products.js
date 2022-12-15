@@ -1,4 +1,7 @@
+const { default: axios } = require("axios");
+const { decode } = require("jsonwebtoken");
 const database = require("../database");
+const decoder = new TextDecoder("ISO-8859-7");
 
 exports.getAllProducts = (req, res, next) => {
   database
@@ -47,24 +50,24 @@ exports.addToCart = (req, res, next) => {
     database
       .execute("select * from cart where mtrl=? and trdr=?", [mtrl, trdr])
       .then(async (results) => {
-         let data = this.correctDateQty(qtysonDate,dates,qty);
-         console.log(data);
-         let datesarr=[];
-         let qty_on_dates=[];
-         for(let i = 0 ; i < data.length;i++){
-             datesarr[i] = data[i].dates;
-             qty_on_dates[i] = data[i].qty_on_date
-         }
+        let data = this.correctDateQty(qtysonDate, dates, qty);
+        console.log(data);
+        let datesarr = [];
+        let qty_on_dates = [];
+        for (let i = 0; i < data.length; i++) {
+          datesarr[i] = data[i].dates;
+          qty_on_dates[i] = data[i].qty_on_date;
+        }
         if (results[0].length > 0) {
           let update = await database.execute(
             "update cart set availability=?,dates=?,qty=?,qtys_on_dates=? where mtrl=? and trdr=?",
-            [avail, datesarr.join(','), qty,qty_on_dates.join(','), mtrl, trdr]
+            [avail, datesarr.join(","), qty, qty_on_dates.join(","), mtrl, trdr]
           );
           res.status(200).json({ message: "product updated" });
         } else {
           let insert = await database.execute(
             "insert into cart (mtrl,trdr,qty,availability,dates,qtys_on_dates) VALUES (?,?,?,?,?,?)",
-            [mtrl, trdr, qty, avail, datesarr.join(','),qty_on_dates.join(',')]
+            [mtrl, trdr, qty, avail, datesarr.join(","), qty_on_dates.join(",")]
           );
           res.status(200).json({ message: "product inserted" });
         }
@@ -159,40 +162,38 @@ exports.getSingleCartItem = async (singelProduct) => {
   }
 };
 
-exports.correctDateQty = (qtys_on_dates,dates,qty) => {
-  console.log(qtys_on_dates,dates,qty);
+exports.correctDateQty = (qtys_on_dates, dates, qty) => {
+  console.log(qtys_on_dates, dates, qty);
 
   let qty_on_dates = this.fromStringToArray(qtys_on_dates);
   let datesar = this.fromStringToArray(dates);
-  let qtys =+ qty;
+  let qtys = +qty;
   let returnData = [];
-  let qty_count =0;
-  for (let i = 0; i < qty_on_dates.length; ++i ){
-    console.log(qty_on_dates[i])
+  let qty_count = 0;
+  for (let i = 0; i < qty_on_dates.length; ++i) {
+    console.log(qty_on_dates[i]);
     qty_count += +qty_on_dates[i];
-    if(qtys > qty_count){
-        returnData.push({
-            qty_on_date : +qty_on_dates[i],
-            dates :datesar[i]
-        })
-        
-     }else{
-        let diff = +qty_count - +qtys
-        let qtydata = +qty_on_dates[i] - +diff
-        console.log(qtydata);
-        returnData.push({
-            qty_on_date : qtydata,
-            dates : datesar[i]
-        });
-        break;
-     }
-    
+    if (qtys > qty_count) {
+      returnData.push({
+        qty_on_date: +qty_on_dates[i],
+        dates: datesar[i],
+      });
+    } else {
+      let diff = +qty_count - +qtys;
+      let qtydata = +qty_on_dates[i] - +diff;
+      console.log(qtydata);
+      returnData.push({
+        qty_on_date: qtydata,
+        dates: datesar[i],
+      });
+      break;
+    }
   }
   return returnData;
 };
-exports.diff = (q,c) =>{
-    return c - q ;
-}
+exports.diff = (q, c) => {
+  return c - q;
+};
 exports.findOmada = async (omada) => {
   let findOmada = await database.execute(
     "select * from group_categories where group_id=?",
@@ -239,9 +240,200 @@ exports.findEpoxi = async (epoxi) => {
   }
 };
 exports.fromStringToArray = (string) => {
-  let arr = string.split(',');
+  let arr = string.split(",");
   return arr;
 };
+exports.updateStock = async (req, res, next) => {
+  const method = req.body.method;
 
+  if (!method) {
+    res.status(402).json({ message: "fill the required fields" });
+  } else {
+    let clientID = await this.login();
+    clientID = await this.authenticate(clientID);
+    let stocks = await this.stockupdate(clientID);
 
+    await this.stockToDatabase(stocks);
+  }
+};
 
+exports.updateProducts = async (req, res, next) => {
+  const method = req.body.method;
+
+  if (!method) {
+    res.status(402).json({
+      message: "fill the required fields",
+    });
+  } else {
+    let clientID = await this.login();
+    clientID = await this.authenticate(clientID);
+    let products = await this.mtrlUpdate(clientID);
+
+    await this.productsToDatabase(products);
+    res.status(200).json({ mesage: "Products Updated" });
+  }
+};
+exports.productsToDatabase = async (products) => {
+  for (let i = 0; i < products.totalcount; i++) {
+    await this.addToDatabase(products.rows[i]);
+  }
+};
+exports.addToDatabase = async (product) => {
+  let select = await database.execute("select * from products where mtrl=?", [
+    product.mtrl,
+  ]);
+  try {
+    if (+product.cccprweb != 0 || product.cccprweb != "0") {
+      if (select[0].length > 0) {
+        let update = await database.execute(
+          "update products set code=?,name=?,cai=?,tupos_elastikou=?,omada=?,marka=?,zanta=?,epoxi=?,upddate=? where mtrl=?",
+          [
+            product.code,
+            product.name,
+            product.CAI,
+            product.Tupos_Elastikou,
+            product.Omada,
+            product.Marka,
+            product.Zanta,
+            product.Epoxi,
+            product.upddate,
+            product.mtrl,
+          ]
+        );
+      } else {
+        let insert = await database.execute(
+          "insert into products (mtrl,code,name,cai,tupos_elastikou,omada,marka,zanta,epoxi,upddate) VALUES (?,?,?,?,?,?,?,?,?,?)",
+          [
+            product.mtrl,
+            product.code,
+            product.name,
+            product.CAI,
+            product.Tupos_Elastikou,
+            product.Omada,
+            product.Marka,
+            product.Zanta,
+            product.Epoxi,
+            product.upddate,
+          ]
+        );
+      }
+    } else {
+      let deleteProd = await database.execute(
+        "delete from products where mtrl=?",
+        [product.mtrl]
+      );
+    }
+  } catch (err) {
+    throw err;
+  }
+};
+exports.login = async () => {
+  var data = JSON.stringify({
+    service: "login",
+    username: "b2badmin",
+    password: "1234",
+    appId: "1001",
+  });
+  var config = {
+    method: "post",
+    url: "https://periferiaki.oncloud.gr/s1services",
+    headers: {
+      "Content-Type": "application/json;charset=windows-1253",
+      "X-APPSMITH-DATATYPE": "TEXT",
+    },
+    data,
+    responseType: "arraybuffer",
+    reponseEncoding: "binary",
+  };
+  let login = await axios(config);
+  try {
+    let decodedData = decoder.decode(login.data);
+    console.log("login done");
+    decodedData = JSON.parse(decodedData);
+    return decodedData.clientID;
+  } catch (err) {
+    if (!err.statusCode) err.statusCode = 500;
+    throw err;
+  }
+};
+
+exports.authenticate = async (clientID) => {
+  var data = JSON.stringify({
+    service: "authenticate",
+    clientID: clientID,
+    company: "1001",
+    branch: "1000",
+    module: "0",
+    refid: "1",
+  });
+
+  var config = {
+    method: "post",
+    url: "https://periferiaki.oncloud.gr/s1services",
+    headers: {
+      "Content-Type": "application/json;charset=windows-1253",
+      "X-APPSMITH-DATATYPE": "TEXT",
+    },
+    data: data,
+    responseType: "arraybuffer",
+    reponseEncoding: "binary",
+  };
+
+  let authenticate = await axios(config);
+
+  let decodedData = decoder.decode(authenticate.data);
+  decodedData = JSON.parse(decodedData);
+  return decodedData.clientID;
+};
+exports.stockupdate = async (clientID) => {
+  var data = JSON.stringify({
+    service: "SqlData",
+    clientID: clientID,
+    appId: "1001",
+    Sqlname: "STOCKUPDATE",
+    param1: "20220101",
+  });
+  var config = {
+    method: "post",
+    url: "https://periferiaki.oncloud.gr/s1services",
+    headers: {
+      "Content-Type": "application/json;charset=windows-1253",
+      "X-APPSMITH-DATATYPE": "TEXT",
+    },
+    data: data,
+    responseType: "arraybuffer",
+    reponseEncoding: "binary",
+  };
+
+  let stocks = await axios(config);
+  let decodedStock = decoder.decode(stocks.data);
+  decodedStock = JSON.parse(decodedStock);
+  return decodedStock;
+};
+exports.mtrlUpdate = async (clientID) => {
+  var data = JSON.stringify({
+    service: "SqlData",
+    clientID: clientID,
+    appId: "1001",
+    Sqlname: "MTRLUPDATE",
+    param1: "20220101",
+  });
+
+  var config = {
+    method: "post",
+    url: "https://periferiaki.oncloud.gr/s1services",
+    headers: {
+      "Content-Type": "application/json;charset=windows-1253",
+      "X-APPSMITH-DATATYPE": "TEXT",
+    },
+    data: data,
+    responseType: "arraybuffer",
+    reponseEncoding: "binary",
+  };
+
+  let products = await axios(config);
+
+  let decodedProducts = decoder.decode(products.data);
+  decodedProducts = JSON.parse(decodedProducts);
+  return decodedProducts;
+};

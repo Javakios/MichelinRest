@@ -7,5 +7,5 @@ router.post('/getProducts',productsController.getAllProducts);
 router.post('/addToCart',productsController.addToCart);
 router.post('/fetchCart',productsController.fetchCart);
 router.post('/removeCartItem',productsController.removeCartItem);
-
+router.post('/updateProducts',productsController.updateProducts);
 module.exports = router;

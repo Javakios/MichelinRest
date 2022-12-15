@@ -29,7 +29,7 @@ exports.xmlReq = async (req, res, next) => {
     }
   } else if (cai && qty) {
     xml.parseString(
-      await this.michelinConnection(this.getBody(cai, qty),2),
+      await this.michelinConnection(this.getBody(cai, qty), 2),
       async (err, results) => {
         if (err) {
           throw err;
@@ -48,13 +48,64 @@ exports.xmlReq = async (req, res, next) => {
           product_name:
             json.quote.OrderLine[0].OrderedArticle[0].ArticleDescription[0]
               .ArticleDescriptionText[0],
-          response: response,
-          product: await this.findProduct(cai, next),
+          product: await this.findProductWithDates(cai, response),
         });
       }
     );
   } else {
     res.status(402).json({ message: "fill the required fields" });
+  }
+};
+exports.findProductWithDates = async (cai, response) => {
+  let products = await database.execute(
+    "select * from products where cai = ?",
+    [cai]
+  );
+  try {
+    if (products[0].length > 0) {
+      console.log(products[0][0]);
+      console.log(products[0][0].name);
+      return {
+        mtrl: products[0][0].mtrl,
+        code: products[0][0].code,
+        name: products[0][0].name,
+        cai: products[0][0].cai,
+        tipos_elastikou: products[0][0].tupos_elastikou,
+        omada: await this.findOmada(products[0][0].omada),
+        marka: await this.findMarka(products[0][0].marka),
+        zanta: await this.findZanta(products[0][0].zanta),
+        epoxi: await this.findEpoxi(products[0][0].epoxi),
+        upddate: products[0][0].upddate,
+        apothema_thess: products[0][0].apothema_thess,
+        apothema_athens: products[0][0].apothema_athens,
+        price: products[0][0].price,
+        offer: products[0][0].offer,
+        discount: products[0][0].discount,
+        image: products[0][0].image,
+        response: response,
+      };
+    } else {
+      return {
+        mtrl: "",
+        code: "",
+        name: "",
+        cai: "",
+        tipos_elastikou: "",
+        omada: "",
+        marka: "",
+        zanta: "",
+        epoxi: "",
+        upddate: "",
+        apothema_thess: "",
+        apothema_athens: "",
+        price: "",
+        offer: "",
+        discount: "",
+        image: "",
+      };
+    }
+  } catch (err) {
+    throw err;
   }
 };
 
@@ -145,8 +196,8 @@ exports.getBody = (cai, qty) => {
         `;
 };
 
-exports.michelinConnection = async (body,id) => {
-  let message_type = (id==1 ? 'order' : 'inquiry' );
+exports.michelinConnection = async (body, id) => {
+  let message_type = id == 1 ? "order" : "inquiry";
   console.log(message_type);
   var config = {
     headers: {
@@ -251,19 +302,21 @@ exports.order = async (req, res, next) => {
     res.status(402).json({ message: "fill the required fields" });
   } else {
     xml.parseString(
-      await this.michelinConnection(this.getOrderBody(cai, dates, qtys),1),
+      await this.michelinConnection(this.getOrderBody(cai, dates, qtys), 1),
       async (err, results) => {
         if (err) {
-            throw err;
+          throw err;
         }
-        const json = JSON.parse(JSON.stringify(results,null,4));
+        const json = JSON.parse(JSON.stringify(results, null, 4));
         // console.log(json.order_response.OrderLine[0].OrderedArticle[0].OrderReference[0].DocumentID[0]);
         res.status(200).json({
-            message:"Order Completed",
-            response:{
-              DocumentID : json.order_response.OrderLine[0].OrderedArticle[0].OrderReference[0].DocumentID[0]
-            }
-        })
+          message: "Order Completed",
+          response: {
+            DocumentID:
+              json.order_response.OrderLine[0].OrderedArticle[0]
+                .OrderReference[0].DocumentID[0],
+          },
+        });
       }
     );
   }
@@ -294,7 +347,14 @@ exports.getOrderBody = (cai, dates, qty) => {
     `
   );
 };
-
+exports.test = async (req, res, next) => {
+  let mtrl = "2335";
+  let trdr = "5785";
+  let qty = 50;
+  let payment = 2;
+  let response = await this.softOneConnection(mtrl, trdr, qty, payment);
+  res.status(200).json({ message: "Order Placed", response: response });
+};
 exports.getOrderLineData = (cai, dates, qty) => {
   let datesArray = this.fromStringToArray(dates);
   let qtyArray = this.fromStringToArray(qty);
@@ -333,4 +393,103 @@ exports.getOrderLineData = (cai, dates, qty) => {
 exports.fromStringToArray = (string) => {
   let arr = string.split(",");
   return arr;
+};
+
+exports.softOneConnection = async (mtrl, trdr, qty) => {
+  const ITELINES = {
+    LINENUM: 9000001,
+    MTRL: mtrl,
+    QTY1: qty,
+  };
+  let clientID = await this.login();
+  clientID = await this.authenticate(clientID);
+  // object : PURDOC
+  /* data : {
+  PURDOC : {
+    "SERIES" : "2020",
+    "TRDR" : "4095"
+  }
+}
+*/
+  var data = JSON.stringify({
+    service: "setData",
+    clientID: clientID,
+    appId: "1001",
+    object: "PURDOC",
+    key: "",
+    form: "",
+    data: {
+      PURDOC: {
+        SERIES: "2020",
+        TRDR: "4095",
+      },
+      ITELINES: ITELINES,
+    },
+  });
+
+  var config = {
+    method: "post",
+    url: "https://periferiaki.oncloud.gr/s1services",
+    headers: {
+      "Content-Type": "application/json;charset=windows-1253",
+      "X-APPSMITH-DATATYPE": "TEXT",
+    },
+    data: data,
+    responseType: "arraybuffer",
+    reponseEncoding: "binary",
+  };
+
+  let palceOrder = await axios(config);
+  const decoder = new TextDecoder("ISO-8859-7");
+  let decodedCustomers = decoder.decode(palceOrder.data);
+  return JSON.parse(decodedCustomers);
+};
+
+exports.login = async () => {
+  var data = JSON.stringify({
+    service: "login",
+    username: "b2badmin",
+    password: "1234",
+    appId: "1001",
+  });
+  var config = {
+    method: "post",
+    url: "https://periferiaki.oncloud.gr/s1services",
+    headers: {
+      "Content-Type": "application/json;",
+    },
+    data,
+  };
+  let login = await axios(config);
+  try {
+    return login.data.clientID;
+  } catch (err) {
+    if (!err.statusCode) err.statusCode = 500;
+    throw err;
+  }
+};
+exports.authenticate = async (clientID) => {
+  var data = JSON.stringify({
+    service: "authenticate",
+    clientID: clientID,
+    company: "1001",
+    branch: "1000",
+    module: "0",
+    refid: "1",
+  });
+  var config = {
+    method: "post",
+    url: "https://periferiaki.oncloud.gr/s1services",
+    headers: {
+      "Content-Type": "application/json;",
+    },
+    data,
+  };
+  let login = await axios(config);
+  try {
+    return login.data.clientID;
+  } catch (err) {
+    if (!err.statusCode) err.statusCode = 500;
+    throw err;
+  }
 };
