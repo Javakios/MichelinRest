@@ -242,3 +242,6 @@ exports.fromStringToArray = (string) => {
   let arr = string.split(',');
   return arr;
 };
+
+
+
