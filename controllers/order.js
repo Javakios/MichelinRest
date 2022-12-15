@@ -234,7 +234,7 @@ exports.buetifyResponse = (response) => {
         delivery_dates:
           response.quote.OrderLine[i].OrderedArticle[i].ScheduleDetails[j]
             .DeliveryDate[0],
-        quantity_valiue:
+        quantity_value:
           response.quote.OrderLine[i].OrderedArticle[i].ScheduleDetails[j]
             .AvailableQuantity[0].QuantityValue[0],
       });

@@ -254,6 +254,7 @@ exports.updateStock = async (req, res, next) => {
     let stocks = await this.stockupdate(clientID);
 
     await this.stockToDatabase(stocks);
+    res.status(200).json({message:"Stock Updated"})
   }
 };
 
@@ -278,6 +279,16 @@ exports.productsToDatabase = async (products) => {
     await this.addToDatabase(products.rows[i]);
   }
 };
+exports.stockToDatabase = async (stocks)=>{
+  for(let i = 0 ; i<stocks.totalcount;i++){
+    await this.addStockToDatabase(stocks[i]);
+  }
+}
+exports.addStockToDatabase=async (stock)=>{
+  console.log(stock);
+  return 
+
+}
 exports.addToDatabase = async (product) => {
   let select = await database.execute("select * from products where mtrl=?", [
     product.mtrl,
