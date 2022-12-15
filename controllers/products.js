@@ -252,7 +252,6 @@ exports.updateStock = async (req, res, next) => {
     let clientID = await this.login();
     clientID = await this.authenticate(clientID);
     let stocks = await this.stockupdate(clientID);
-
     await this.stockToDatabase(stocks);
     res.status(200).json({message:"Stock Updated"})
   }
@@ -281,13 +280,13 @@ exports.productsToDatabase = async (products) => {
 };
 exports.stockToDatabase = async (stocks)=>{
   for(let i = 0 ; i<stocks.totalcount;i++){
-    await this.addStockToDatabase(stocks[i]);
+    await this.addStockToDatabase(stocks.rows[i]);
   }
 }
 exports.addStockToDatabase=async (stock)=>{
-  console.log(stock);
-  return 
-
+  
+  let update = await database.execute('update products set apothema_thess=?,apothema_athens=? where mtrl=?',[stock.Thess_Apothema,stock.Athens_Apothema,stock.MTRL])
+  
 }
 exports.addToDatabase = async (product) => {
   let select = await database.execute("select * from products where mtrl=?", [
@@ -402,7 +401,11 @@ exports.stockupdate = async (clientID) => {
     clientID: clientID,
     appId: "1001",
     Sqlname: "STOCKUPDATE",
-    param1: "20220101",
+    param1: "20221201",
+    param2: "20221215",
+    param3:"2022",
+    param4:"12"
+
   });
   var config = {
     method: "post",
