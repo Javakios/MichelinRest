@@ -222,7 +222,7 @@ exports.buetifyResponse = (response) => {
   let returnData = [];
   for (let i = 0; i < response.quote.OrderLine.length; i++) {
     availables.push({
-      avaliable: response.quote.OrderLine[i].OrderedArticle[0].Availability[0],
+      available: response.quote.OrderLine[i].OrderedArticle[0].Availability[0],
     });
     console.log(response.quote.OrderLine[0].OrderedArticle[0].ScheduleDetails);
     for (
