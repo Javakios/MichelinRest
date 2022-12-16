@@ -253,8 +253,328 @@ exports.updateStock = async (req, res, next) => {
     clientID = await this.authenticate(clientID);
     let stocks = await this.stockupdate(clientID);
     await this.stockToDatabase(stocks);
-    res.status(200).json({message:"Stock Updated"})
+    res.status(200).json({ message: "Stock Updated" });
   }
+};
+exports.updateCategories =async (req,res,next) =>{
+  const method = req.body.method;
+  if(!method) {
+    res.status(402).json({message:"fill the required fields"});
+  }else{
+    let clientID = await this.login();
+    clientID = await this.authenticate(clientID);
+    let categories = await this.mtrCategory(clientID)
+    await this.categoriesUpdate(categories);
+    res.status(200).json({message:"Categories Updated"});
+  }
+}
+exports.categoriesUpdate = async(categories) =>{
+  for(let i = 0 ; i < categories.totalcount;i ++){
+    await this.categoriesToDb(categories.rows[i]);
+  }
+}
+exports.categoriesToDb = async(category) =>{
+  let select = await database.execute("select * from category where category=?", [
+    category.mtrcategory,
+  ]);
+  try {
+    if (select[0].length > 0) {
+      let update = await database.execute(
+        "update category set code = ?,name=? wherer category=?",
+        [category.code, category.name, category.mtrlcategory]
+      );
+    } else {
+      let insert = await database.execute(
+        "insert into category (category,code,name) VALUES(?,?,?)",
+        [category.mtrlcategory, category.code, category.name]
+      );
+    }
+  } catch (err) {
+    throw err;
+  }
+}
+exports.mtrCategory = async(clientID) =>{
+  var data = JSON.stringify({
+    service: "SqlData",
+    clientID: clientID,
+    appId: "1001",
+    Sqlname: "MTRCATEGORY",
+    param1: "20220101",
+  });
+
+  var config = {
+    method: "post",
+    url: "https://periferiaki.oncloud.gr/s1services",
+    headers: {
+      "Content-Type": "application/json;charset=windows-1253",
+      "X-APPSMITH-DATATYPE": "TEXT",
+    },
+    data,
+    responseType: "arraybuffer",
+    reponseEncoding: "binary",
+  };
+  let categories = await axios(config)
+  let decodedCategories = decoder.decode(categories.data);
+  decodedCategories = JSON.parse(decodedCategories);
+  return decodedCategories;
+}
+exports.updateModel = async (req, res, next) => {
+  const method = req.body.method;
+
+  if (!method) {
+    res.status(402).json({ message: "fill the required fields" });
+  } else {
+    let clientID = await this.login();
+    clientID = await this.authenticate(clientID);
+    let models = await this.mtrModel(clientID);
+
+    await this.modelsUpdate(models);
+    res.status(200).json({ mesage: "Models Updated" });
+  }
+};
+exports.modelsUpdate = async (models) => {
+  for (let i = 0; i < models.totalcount; i++) {
+    await this.modelsToDb(models.rows[i]);
+  }
+};
+
+exports.modelsToDb = async (model) => {
+  let select = await database.execute("select * from model where model_id=?", [
+    model.mtrmodel,
+  ]);
+  try {
+    if (select[0].length > 0) {
+      let update = await database.execute(
+        "update model set code = ?,name=? wherer model_id=?",
+        [model.code, model.name, model.mtrlmodel]
+      );
+    } else {
+      let insert = await database.execute(
+        "insert into model (model_id,code,name) VALUES(?,?,?)",
+        [model.mtrlmodel, model.code, model.name]
+      );
+    }
+  } catch (err) {
+    throw err;
+  }
+};
+exports.updateGroup = async (req,res,next) =>{
+  const method = req.body.method;
+  
+  if(!method){
+    res.status(402).json({mesage:"fill the required fields"});
+  }else{
+    let clientID = await this.login();
+    clientID = await this.authenticate(clientID);
+    let group = await this.mtrGroup(clientID);
+    await this.groupUpdate(group);
+    res.status(200).json({message:"Group Updated"});
+  }
+}
+exports.groupUpdate =async (group) =>{
+  for(let i =0 ; i < group.totalcount;i++){
+    await this.groupToDb(group.rows[i]);
+  }
+}
+exports.groupToDb = async(group) =>{
+  let select = await database.execute("select * from group_categories where group_id=?", [
+    group.mtrgroup,
+  ]);
+  try {
+    if (select[0].length > 0) {
+      let update = await database.execute(
+        "update group_categories set code = ?,name=? wherer group_id=?",
+        [group.code, group.name, group.mtrlgroup]
+      );
+    } else {
+      let insert = await database.execute(
+        "insert into group_categories (group_id,code,name) VALUES(?,?,?)",
+        [group.mtrlgroup, group.code, group.name]
+      );
+    }
+  } catch (err) {
+    throw err;
+  }
+}
+exports.mtrGroup = async(clientID) =>{
+  var data = JSON.stringify({
+    service: "SqlData",
+    clientID: clientID,
+    appId: "1001",
+    Sqlname: "MTRGROUP",
+    param1: "20220101",
+  });
+
+  var config = {
+    method: "post",
+    url: "https://periferiaki.oncloud.gr/s1services",
+    headers: {
+      "Content-Type": "application/json;charset=windows-1253",
+      "X-APPSMITH-DATATYPE": "TEXT",
+    },
+    data,
+    responseType: "arraybuffer",
+    reponseEncoding: "binary",
+  };
+  let group = await axios(config);
+  let decodedGroup = decoder.decode(group.data);
+  decodedGroup = JSON.parse(decodedGroup);
+  return decodedGroup;
+}
+exports.updateManfctr =async (req,res,next )=>{
+  const method = req.body.method;
+
+  if(!method){
+    res.status(402).json({message:"fill the required fields"});
+  }else{
+    let clientID = await this.login();
+    clientID = await this.authenticate(clientID);
+    let manfctr = await this.mtrlManfctr(clientID);
+    await this.manfctrUpdate(manfctr);
+    res.status(200).json({message:"Manfctr Updated"});
+  }
+}
+exports.manfctrUpdate = async(manfctr)=>{
+  for(let i = 0 ; i < manfctr.totalcount; i++){
+    await this.manfctrToDb(manfctr.rows[i]);
+  }
+}
+exports.manfctrToDb = async (manfctr) =>{
+  let select = await database.execute("select * from manfctr where manfctr_id=?", [
+    manfctr.mtrmanfctr,
+  ]);
+  try {
+    if (select[0].length > 0) {
+      let update = await database.execute(
+        "update manfctr set code = ?,name=? wherer manfctr_id=?",
+        [manfctr.code, manfctr.name, manfctr.mtrmanfctr]
+      );
+    } else {
+      let insert = await database.execute(
+        "insert into manfctr (manfctr_id,code,name) VALUES(?,?,?)",
+        [manfctr.mtrmanfctr, manfctr.code, manfctr.name]
+      );
+    }
+  } catch (err) {
+    throw err;
+  }
+}
+exports.mtrlManfctr = async(clientID) =>{
+  var data = JSON.stringify({
+    service: "SqlData",
+    clientID: clientID,
+    appId: "1001",
+    Sqlname: "MTRMANFCTR",
+    param1: "20220101",
+  });
+
+  var config = {
+    method: "post",
+    url: "https://periferiaki.oncloud.gr/s1services",
+    headers: {
+      "Content-Type": "application/json;charset=windows-1253",
+      "X-APPSMITH-DATATYPE": "TEXT",
+    },
+    data,
+    responseType: "arraybuffer",
+    reponseEncoding: "binary",
+  };
+
+  let manfctr = await axios(config);
+  let decodedManfctr = decoder.decode(manfctr.data);
+  decodedManfctr = JSON.parse(decodedManfctr);
+  return decodedManfctr;
+};
+
+exports.updateMark = async (req, res, next) => {
+  const method = req.body.method;
+
+  if (!method) {
+    res.status(402).json({ message: "fill the required fields" });
+  } else {
+    let clientID = await this.login();
+    clientID = await this.authenticate(clientID);
+    let mark = await this.mtrMark(clientID);
+    await this.markUpdate(mark);
+    res.status(200).json({ message: "Mark Updated" });
+  }
+};
+exports.markUpdate = async (mark) => {
+  for (let i = 0; i < mark.totalcount; i++) {
+    await this.markToDb(mark.rows[i]);
+  }
+};
+exports.markToDb = async (mark) => {
+  let select = await database.execute("select * from mark where mark_id=?", [
+    mark.mtrmark,
+  ]);
+  try {
+    if (select[0].length > 0) {
+      let update = await database.execute(
+        "update mark set code = ?,name=? wherer mark_id=?",
+        [mark.code, mark.name, mark.mtrlmark]
+      );
+    } else {
+      let insert = await database.execute(
+        "insert into mark (mark_id,code,name) VALUES(?,?,?)",
+        [mark.mtrlmark, mark.code, mark.name]
+      );
+    }
+  } catch (err) {
+    throw err;
+  }
+};
+exports.mtrMark = async (clientID) => {
+  var data = JSON.stringify({
+    service: "SqlData",
+    clientID: clientID,
+    appId: "1001",
+    Sqlname: "MTRMARK",
+    param1: "20220101",
+  });
+
+  var config = {
+    method: "post",
+    url: "https://periferiaki.oncloud.gr/s1services",
+    headers: {
+      "Content-Type": "application/json;charset=windows-1253",
+      "X-APPSMITH-DATATYPE": "TEXT",
+    },
+    data,
+    responseType: "arraybuffer",
+    reponseEncoding: "binary",
+  };
+
+  let mark = await axios(config);
+  let decodedMark = decoder.decode(mark.data);
+  decodedMark = JSON.parse(decodedMark);
+  return decodedMark;
+};
+exports.mtrlModel = async (clientID) => {
+  var data = JSON.stringify({
+    service: "SqlData",
+    clientID: clientID,
+    appId: "1001",
+    Sqlname: "MTRMODEL",
+    param1: "20220101",
+  });
+
+  var config = {
+    method: "post",
+    url: "https://periferiaki.oncloud.gr/s1services",
+    headers: {
+      "Content-Type": "application/json;charset=windows-1253",
+      "X-APPSMITH-DATATYPE": "TEXT",
+    },
+    data,
+    responseType: "arraybuffer",
+    reponseEncoding: "binary",
+  };
+
+  let models = await axios(config);
+  let decodedModels = decoder.decode(models.data);
+  decodedModels = JSON.parse(decodedModels);
+  return decodedModels;
 };
 
 exports.updateProducts = async (req, res, next) => {
@@ -278,16 +598,17 @@ exports.productsToDatabase = async (products) => {
     await this.addToDatabase(products.rows[i]);
   }
 };
-exports.stockToDatabase = async (stocks)=>{
-  for(let i = 0 ; i<stocks.totalcount;i++){
+exports.stockToDatabase = async (stocks) => {
+  for (let i = 0; i < stocks.totalcount; i++) {
     await this.addStockToDatabase(stocks.rows[i]);
   }
-}
-exports.addStockToDatabase=async (stock)=>{
-  
-  let update = await database.execute('update products set apothema_thess=?,apothema_athens=? where mtrl=?',[stock.Thess_Apothema,stock.Athens_Apothema,stock.MTRL])
-  
-}
+};
+exports.addStockToDatabase = async (stock) => {
+  let update = await database.execute(
+    "update products set apothema_thess=?,apothema_athens=? where mtrl=?",
+    [stock.Thess_Apothema, stock.Athens_Apothema, stock.MTRL]
+  );
+};
 exports.addToDatabase = async (product) => {
   let select = await database.execute("select * from products where mtrl=?", [
     product.mtrl,
@@ -403,9 +724,8 @@ exports.stockupdate = async (clientID) => {
     Sqlname: "STOCKUPDATE",
     param1: "20221201",
     param2: "20221215",
-    param3:"2022",
-    param4:"12"
-
+    param3: "2022",
+    param4: "12",
   });
   var config = {
     method: "post",
