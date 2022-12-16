@@ -295,35 +295,42 @@ exports.findEpoxi = async (epoxi) => {
 };
 
 exports.order = async (req, res, next) => {
-  const cai = req.body.cai;
-  const dates = req.body.dates;
-  const qtys = req.body.qtys;
-
-  if (!cai || !dates || !qtys) {
-    res.status(402).json({ message: "fill the required fields" });
-  } else {
+  const products = req.body.products;
+  const trdr = req.body.trdr;
+  if(!products || ! trdr) res.status(402).json({message:"fill the required fields"});
+  else{
+    console.log(req.body.products[0]);
     xml.parseString(
-      await this.michelinConnection(this.getOrderBody(cai, dates, qtys), 1),
-      async (err, results) => {
-        if (err) {
-          throw err;
-        }
-        const json = JSON.parse(JSON.stringify(results, null, 4));
-        // console.log(json.order_response.OrderLine[0].OrderedArticle[0].OrderReference[0].DocumentID[0]);
-        res.status(200).json({
-          message: "Order Completed",
-          response: {
-            DocumentID:
-              json.order_response.OrderLine[0].OrderedArticle[0]
-                .OrderReference[0].DocumentID[0],
-          },
-        });
-      }
-    );
+      await this.michelinConnection(this.getOrderBody(products), 1),
+       async (err, results) => {
+         if (err) {
+           throw err;
+         }
+         const json = JSON.parse(JSON.stringify(results, null, 4));
+        const softoneResponse = await this.softOneConnection(products,trdr);
+         res.status(200).json({
+           message: "Order Completed",
+           response: {
+             DocumentID:
+               json.order_response.OrderLine[0].OrderedArticle[0]
+                 .OrderReference[0].DocumentID[0],
+              ID : softoneResponse
+           },
+         });
+       }
+     );
   }
+
+  // if (!cai || !dates ) {
+  //   res.status(402).json({ message: "fill the required fields" });
+  // } else {
+   
+   
+    
+ //}
 };
 
-exports.getOrderBody = (cai, dates, qty) => {
+exports.getOrderBody = (products) => {
   return (
     `<?xml version="1.0" encoding="UTF-8"?>
 <order>
@@ -342,7 +349,7 @@ exports.getOrderBody = (cai, dates, qty) => {
         <AgencyCode>91</AgencyCode>
     </Consignee>
     ` +
-    this.getOrderLineData(cai, dates, qty) +
+    this.getOrderLineData(products) +
     `
     </order>
     `
@@ -356,37 +363,46 @@ exports.test = async (req, res, next) => {
   let response = await this.softOneConnection(mtrl, trdr, qty, payment);
   res.status(200).json({ message: "Order Placed", response: response });
 };
-exports.getOrderLineData = (cai, dates, qty) => {
-  let datesArray = this.fromStringToArray(dates);
-  let qtyArray = this.fromStringToArray(qty);
+exports.getOrderLineData = (products) => {
   let orderLine = [];
-  for (let i = 0; i < qtyArray.length; i++) {
-    let line = i + 1;
-    orderLine[i] =
-      `
-        <OrderLine>
-        <LineID>` +
-      line +
-      `</LineID>
-        <OrderedArticle>
-            <ArticleIdentification>
-                <ManufacturersArticleID>` +
-      cai +
-      `</ManufacturersArticleID>
-               <EANUCCArticleID></EANUCCArticleID>
-            </ArticleIdentification>
-            <RequestedDeliveryDate>` +
-      datesArray[i] +
-      `</RequestedDeliveryDate>
-            <RequestedQuantity>
-                <QuantityValue>` +
-      qtyArray[i] +
-      `</QuantityValue>
-            </RequestedQuantity>
-        </OrderedArticle>
-    </OrderLine>
-        `;
-  }
+  let line = 1;
+  let index =0;
+  let datesarr = [];
+  let qty_on_dates = [];
+  for(let j =0 ; j < products.length;j++){
+    datesarr = this.fromStringToArray(products[j].date);
+    qty_on_dates =this.fromStringToArray(products[j].qty_on_dates)
+    for (let i = 0; i < datesarr.length; i++) {
+    
+      orderLine[index] =
+        `
+          <OrderLine>
+          <LineID>` +
+        line +
+        `</LineID>
+          <OrderedArticle>
+              <ArticleIdentification>
+                  <ManufacturersArticleID>` +
+                  products[j].cai +
+        `</ManufacturersArticleID>
+                <EANUCCArticleID></EANUCCArticleID>
+              </ArticleIdentification>
+              <RequestedDeliveryDate>` +
+              datesarr[i] +
+        `</RequestedDeliveryDate>
+              <RequestedQuantity>
+                  <QuantityValue>` +
+                  qty_on_dates[i] +
+        `</QuantityValue>
+              </RequestedQuantity>
+          </OrderedArticle>
+      </OrderLine>
+          `;
+          line++;
+          index++;
+    }
+    index++
+}
 
   return orderLine;
 };
@@ -396,12 +412,15 @@ exports.fromStringToArray = (string) => {
   return arr;
 };
 
-exports.softOneConnection = async (mtrl, trdr, qty) => {
-  const ITELINES = {
-    LINENUM: 9000001,
-    MTRL: mtrl,
-    QTY1: qty,
-  };
+exports.softOneConnection = async (products ,trdr) => {
+  let ITELINES = [];
+  for(let i = 0 ; i < products.length;i++){
+      ITELINES[i] ={
+        LINUM:9000000 + i,
+        MTRL : products[i].mtrl,
+        QTY1 : products[i].qty
+      }
+  }
   let clientID = await this.login();
   clientID = await this.authenticate(clientID);
   // object : PURDOC
