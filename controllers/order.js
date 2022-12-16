@@ -45,7 +45,7 @@ exports.xmlReq = async (req, res, next) => {
         );
         res.status(200).json({
           message: "Response",
-          response : response,
+          response: response,
           product_name:
             json.quote.OrderLine[0].OrderedArticle[0].ArticleDescription[0]
               .ArticleDescriptionText[0],
@@ -297,37 +297,30 @@ exports.findEpoxi = async (epoxi) => {
 exports.order = async (req, res, next) => {
   const products = req.body.products;
   const trdr = req.body.trdr;
-  if(!products || ! trdr) res.status(402).json({message:"fill the required fields"});
-  else{
+  if (!products || !trdr)
+    res.status(402).json({ message: "fill the required fields" });
+  else {
     console.log(req.body.products[0]);
     xml.parseString(
       await this.michelinConnection(this.getOrderBody(products), 1),
-       async (err, results) => {
-         if (err) {
-           throw err;
-         }
-         const json = JSON.parse(JSON.stringify(results, null, 4));
-        const softoneResponse = await this.softOneConnection(products,trdr);
-         res.status(200).json({
-           message: "Order Completed",
-           response: {
-             DocumentID:
-               json.order_response.OrderLine[0].OrderedArticle[0]
-                 .OrderReference[0].DocumentID[0],
-              ID : softoneResponse
-           },
-         });
-       }
-     );
+      async (err, results) => {
+        if (err) {
+          throw err;
+        }
+        const json = JSON.parse(JSON.stringify(results, null, 4));
+        const softoneResponse = await this.softOneConnection(products, trdr);
+        res.status(200).json({
+          message: "Order Completed",
+          response: {
+            DocumentID:
+              json.order_response.OrderLine[0].OrderedArticle[0]
+                .OrderReference[0].DocumentID[0],
+            ID: softoneResponse,
+          },
+        });
+      }
+    );
   }
-
-  // if (!cai || !dates ) {
-  //   res.status(402).json({ message: "fill the required fields" });
-  // } else {
-   
-   
-    
- //}
 };
 
 exports.getOrderBody = (products) => {
@@ -366,14 +359,13 @@ exports.test = async (req, res, next) => {
 exports.getOrderLineData = (products) => {
   let orderLine = [];
   let line = 1;
-  let index =0;
+  let index = 0;
   let datesarr = [];
   let qty_on_dates = [];
-  for(let j =0 ; j < products.length;j++){
+  for (let j = 0; j < products.length; j++) {
     datesarr = this.fromStringToArray(products[j].date);
-    qty_on_dates =this.fromStringToArray(products[j].qty_on_dates)
+    qty_on_dates = this.fromStringToArray(products[j].qty_on_dates);
     for (let i = 0; i < datesarr.length; i++) {
-    
       orderLine[index] =
         `
           <OrderLine>
@@ -383,26 +375,26 @@ exports.getOrderLineData = (products) => {
           <OrderedArticle>
               <ArticleIdentification>
                   <ManufacturersArticleID>` +
-                  products[j].cai +
+        products[j].cai +
         `</ManufacturersArticleID>
                 <EANUCCArticleID></EANUCCArticleID>
               </ArticleIdentification>
               <RequestedDeliveryDate>` +
-              datesarr[i] +
+        datesarr[i] +
         `</RequestedDeliveryDate>
               <RequestedQuantity>
                   <QuantityValue>` +
-                  qty_on_dates[i] +
+        qty_on_dates[i] +
         `</QuantityValue>
               </RequestedQuantity>
           </OrderedArticle>
       </OrderLine>
           `;
-          line++;
-          index++;
+      line++;
+      index++;
     }
-    index++
-}
+    index++;
+  }
 
   return orderLine;
 };
@@ -412,14 +404,14 @@ exports.fromStringToArray = (string) => {
   return arr;
 };
 
-exports.softOneConnection = async (products ,trdr) => {
+exports.softOneConnection = async (products, trdr) => {
   let ITELINES = [];
-  for(let i = 0 ; i < products.length;i++){
-      ITELINES[i] ={
-        LINUM:9000000 + i,
-        MTRL : products[i].mtrl,
-        QTY1 : products[i].qty
-      }
+  for (let i = 0; i < products.length; i++) {
+    ITELINES[i] = {
+      LINUM: 9000000 + i,
+      MTRL: products[i].mtrl,
+      QTY1: products[i].qty,
+    };
   }
   let clientID = await this.login();
   clientID = await this.authenticate(clientID);
