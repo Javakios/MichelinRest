@@ -280,13 +280,13 @@ exports.categoriesToDb = async(category) =>{
   try {
     if (select[0].length > 0) {
       let update = await database.execute(
-        "update category set code = ?,name=? wherer category=?",
-        [category.code, category.name, category.mtrlcategory]
+        "update category set code = ?,name=? where category=?",
+        [category.code, category.name, category.mtrcategory]
       );
     } else {
       let insert = await database.execute(
         "insert into category (category,code,name) VALUES(?,?,?)",
-        [category.mtrlcategory, category.code, category.name]
+        [category.mtrcategory, category.code, category.name]
       );
     }
   } catch (err) {
@@ -326,8 +326,7 @@ exports.updateModel = async (req, res, next) => {
   } else {
     let clientID = await this.login();
     clientID = await this.authenticate(clientID);
-    let models = await this.mtrModel(clientID);
-
+    let models = await this.mtrlModel(clientID);
     await this.modelsUpdate(models);
     res.status(200).json({ mesage: "Models Updated" });
   }
@@ -339,19 +338,20 @@ exports.modelsUpdate = async (models) => {
 };
 
 exports.modelsToDb = async (model) => {
+  console.log(model);
   let select = await database.execute("select * from model where model_id=?", [
     model.mtrmodel,
   ]);
   try {
     if (select[0].length > 0) {
       let update = await database.execute(
-        "update model set code = ?,name=? wherer model_id=?",
-        [model.code, model.name, model.mtrlmodel]
+        "update model set code = ?,name=? where model_id=?",
+        [model.code, model.name, model.mtrmodel]
       );
     } else {
       let insert = await database.execute(
         "insert into model (model_id,code,name) VALUES(?,?,?)",
-        [model.mtrlmodel, model.code, model.name]
+        [model.mtrmodel, model.code, model.name]
       );
     }
   } catch (err) {
@@ -383,13 +383,13 @@ exports.groupToDb = async(group) =>{
   try {
     if (select[0].length > 0) {
       let update = await database.execute(
-        "update group_categories set code = ?,name=? wherer group_id=?",
-        [group.code, group.name, group.mtrlgroup]
+        "update group_categories set code = ?,name=? where group_id=?",
+        [group.code, group.name, group.mtrgroup]
       );
     } else {
       let insert = await database.execute(
         "insert into group_categories (group_id,code,name) VALUES(?,?,?)",
-        [group.mtrlgroup, group.code, group.name]
+        [group.mtrgroup, group.code, group.name]
       );
     }
   } catch (err) {
@@ -446,7 +446,7 @@ exports.manfctrToDb = async (manfctr) =>{
   try {
     if (select[0].length > 0) {
       let update = await database.execute(
-        "update manfctr set code = ?,name=? wherer manfctr_id=?",
+        "update manfctr set code = ?,name=? where manfctr_id=?",
         [manfctr.code, manfctr.name, manfctr.mtrmanfctr]
       );
     } else {
@@ -511,13 +511,13 @@ exports.markToDb = async (mark) => {
   try {
     if (select[0].length > 0) {
       let update = await database.execute(
-        "update mark set code = ?,name=? wherer mark_id=?",
-        [mark.code, mark.name, mark.mtrlmark]
+        "update mark set code = ?,name=? where mark_id=?",
+        [mark.code, mark.name, mark.mtrmark]
       );
     } else {
       let insert = await database.execute(
         "insert into mark (mark_id,code,name) VALUES(?,?,?)",
-        [mark.mtrlmark, mark.code, mark.name]
+        [mark.mtrmark, mark.code, mark.name]
       );
     }
   } catch (err) {
