@@ -204,12 +204,12 @@ exports.michelinConnection = async (body, id) => {
     headers: {
       "Content-Type": "text/xml;charset=utf-8",
       Accept: "text/xml",
-      Authorization: "Basic TVdHMjExMzpBRCs5NWZlUg==",
+      Authorization: "Basic TVdHMjExMzpNaWNoZWxpbj0x",
       "Message-Type": message_type,
     },
   };
   let req = await axios.post(
-    "https://bibserve.com/eb3/C1/AdhocServlet",
+    "https://bibserve-indus.michelin.com/eb3/C1/AdhocServlet",
     body,
     config
   );
