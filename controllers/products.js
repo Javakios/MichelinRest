@@ -37,20 +37,19 @@ exports.getAllProducts = (req, res, next) => {
 };
 
 exports.addToCart = (req, res, next) => {
-  const mtrl = req.body.mtrl;
-  const trdr = req.body.trdr;
   const qty = req.body.qty;
-  const avail = req.body.availability;
-  const dates = req.body.dates;
-  const qtysonDate = req.body.qtysonDate;
+  const product = req.body.product;
+  const trdr = req.body.trdr
 
-  if (!mtrl || !trdr || !qty || !avail || !dates || !qtysonDate) {
+  if (!trdr || !qty || !product) {
     res.status(402).json({ message: "Fill The Required Fields" });
   } else {
+    console.log(product);
+    console.log(product.response)
     database
-      .execute("select * from cart where mtrl=? and trdr=?", [mtrl, trdr])
+      .execute("select * from cart where mtrl=? and trdr=?", [product.mtrl, trdr])
       .then(async (results) => {
-        let data = this.correctDateQty(qtysonDate, dates, qty);
+        let data = this.correctDateQty(product.response.delivery_dates, qty);
         console.log(data);
         let datesarr = [];
         let qty_on_dates = [];
@@ -61,13 +60,13 @@ exports.addToCart = (req, res, next) => {
         if (results[0].length > 0) {
           let update = await database.execute(
             "update cart set availability=?,dates=?,qty=?,qtys_on_dates=? where mtrl=? and trdr=?",
-            [avail, datesarr.join(","), qty, qty_on_dates.join(","), mtrl, trdr]
+            [product.response.availability[0].available, datesarr.join(","), qty, qty_on_dates.join(","), product.mtrl, trdr]
           );
           res.status(200).json({ message: "product updated" });
         } else {
           let insert = await database.execute(
             "insert into cart (mtrl,trdr,qty,availability,dates,qtys_on_dates) VALUES (?,?,?,?,?,?)",
-            [mtrl, trdr, qty, avail, datesarr.join(","), qty_on_dates.join(",")]
+            [product.mtrl, trdr, qty, product.response.availability[0].available, datesarr.join(","), qty_on_dates.join(",")]
           );
           res.status(200).json({ message: "product inserted" });
         }
@@ -162,29 +161,24 @@ exports.getSingleCartItem = async (singelProduct) => {
   }
 };
 
-exports.correctDateQty = (qtys_on_dates, dates, qty) => {
-  console.log(qtys_on_dates, dates, qty);
-
-  let qty_on_dates = this.fromStringToArray(qtys_on_dates);
-  let datesar = this.fromStringToArray(dates);
+exports.correctDateQty = (dates_arr, qty) => {  
   let qtys = +qty;
   let returnData = [];
   let qty_count = 0;
-  for (let i = 0; i < qty_on_dates.length; ++i) {
-    console.log(qty_on_dates[i]);
-    qty_count += +qty_on_dates[i];
+  for (let i = 0; i < dates_arr.length; ++i) {
+    qty_count += +dates_arr[i].quantity_value;
     if (qtys > qty_count) {
       returnData.push({
-        qty_on_date: +qty_on_dates[i],
-        dates: datesar[i],
+        qty_on_date: +dates_arr[i].quantity_value,
+        dates: dates_arr[i].delivery_dates,
       });
     } else {
       let diff = +qty_count - +qtys;
-      let qtydata = +qty_on_dates[i] - +diff;
+      let qtydata = +dates_arr[i].quantity_value - +diff;
       console.log(qtydata);
       returnData.push({
         qty_on_date: qtydata,
-        dates: datesar[i],
+        dates:dates_arr[i].delivery_dates,
       });
       break;
     }
