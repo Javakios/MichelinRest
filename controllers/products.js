@@ -19,7 +19,6 @@ exports.getAllProducts = (req, res, next) => {
           marka: products[0][i].marka,
           zanta: products[0][i].zanta,
           epoxi: products[0][i].epoxi,
-          upddate: products[0][i].upddate,
           apothema_thess: products[0][i].apothema_thess,
           apothema_athens: products[0][i].apothema_athens,
           price: products[0][i].price,
@@ -123,7 +122,6 @@ exports.getSingleCartItem = async (singelProduct) => {
       marka: await this.findMarka(products[0][0].marka),
       zanta: await this.findZanta(products[0][0].zanta),
       epoxi: await this.findEpoxi(products[0][0].epoxi),
-      upddate: products[0][0].upddate,
       apothema_thess: products[0][0].apothema_thess,
       apothema_athens: products[0][0].apothema_athens,
       price: products[0][0].price,
@@ -146,7 +144,6 @@ exports.getSingleCartItem = async (singelProduct) => {
       marka: "",
       zanta: "",
       epoxi: "",
-      upddate: "",
       apothema_thess: "",
       apothema_athens: "",
       price: "",
@@ -611,7 +608,7 @@ exports.addToDatabase = async (product) => {
     if (+product.cccprweb != 0 || product.cccprweb != "0") {
       if (select[0].length > 0) {
         let update = await database.execute(
-          "update products set code=?,name=?,cai=?,tupos_elastikou=?,omada=?,marka=?,zanta=?,epoxi=?,upddate=? where mtrl=?",
+          "update products set code=?,name=?,cai=?,tupos_elastikou=?,omada=?,marka=?,zanta=?,epoxi=? where mtrl=?",
           [
             product.code,
             product.name,
@@ -621,13 +618,12 @@ exports.addToDatabase = async (product) => {
             product.Marka,
             product.Zanta,
             product.Epoxi,
-            product.upddate,
             product.mtrl,
           ]
         );
       } else {
         let insert = await database.execute(
-          "insert into products (mtrl,code,name,cai,tupos_elastikou,omada,marka,zanta,epoxi,upddate) VALUES (?,?,?,?,?,?,?,?,?,?)",
+          "insert into products (mtrl,code,name,cai,tupos_elastikou,omada,marka,zanta,epoxi) VALUES (?,?,?,?,?,?,?,?,?)",
           [
             product.mtrl,
             product.code,
@@ -638,7 +634,6 @@ exports.addToDatabase = async (product) => {
             product.Marka,
             product.Zanta,
             product.Epoxi,
-            product.upddate,
           ]
         );
       }
@@ -765,3 +760,14 @@ exports.mtrlUpdate = async (clientID) => {
   decodedProducts = JSON.parse(decodedProducts);
   return decodedProducts;
 };
+
+exports.clearCart = (req,res,next) =>{
+  const trdr = req.body.trdr;
+
+  if(!trdr){
+    res.status(402).json({message:"fill the required fields"});
+  }else{
+      database.execute('delete from cart')
+  }
+
+}
