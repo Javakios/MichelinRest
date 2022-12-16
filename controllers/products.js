@@ -767,7 +767,8 @@ exports.clearCart = (req,res,next) =>{
   if(!trdr){
     res.status(402).json({message:"fill the required fields"});
   }else{
-      database.execute('delete from cart')
+      database.execute('delete from cart where trdr=?',[trdr])
+      res.status(200).json({message:"Cart Cleared",products:[]});
   }
 
 }
