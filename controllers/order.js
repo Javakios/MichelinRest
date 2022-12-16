@@ -45,6 +45,7 @@ exports.xmlReq = async (req, res, next) => {
         );
         res.status(200).json({
           message: "Response",
+          response : response,
           product_name:
             json.quote.OrderLine[0].OrderedArticle[0].ArticleDescription[0]
               .ArticleDescriptionText[0],
