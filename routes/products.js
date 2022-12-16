@@ -14,4 +14,5 @@ router.post('/updateMark',productsController.updateMark);
 router.post('/updateManfctr',productsController.updateManfctr);
 router.post('/updateGroup',productsController.updateGroup);
 router.post('/updateCategories',productsController.updateCategories);
+router.post('/clearCart',productsController.clearCart);
 module.exports = router;
