@@ -44,7 +44,7 @@ exports.updateQty = (req,res,next) =>{
     res.status(402).json({message:'fill the required fields'});
   }else{
 
-    database.execute('update cart set qty=? where mtrl=? and trdr=?',[qty,mtrl,qty])
+    database.execute('update cart set qty=? where mtrl=? and trdr=?',[qty,mtrl,trdr])
     .then(async results=>{
         await this.fetchCart(req,res,next)
     })
