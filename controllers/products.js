@@ -39,6 +39,7 @@ exports.addToCart = (req, res, next) => {
   const qty = req.body.qty;
   const product = req.body.product;
   const trdr = req.body.trdr
+  
 
   if (!trdr || !qty || !product) {
     res.status(402).json({ message: "Fill The Required Fields" });
@@ -58,14 +59,14 @@ exports.addToCart = (req, res, next) => {
         }
         if (results[0].length > 0) {
           let update = await database.execute(
-            "update cart set availability=?,dates=?,qty=?,qtys_on_dates=? where mtrl=? and trdr=?",
-            [product.response.availability[0].available, datesarr.join(","), qty, qty_on_dates.join(","), product.mtrl, trdr]
+            "update cart set availability=?,dates=?,qty=?,qtys_on_dates=? where mtrl=? and trdr=?,max_qty=?",
+            [product.response.availability[0].available, datesarr.join(","), qty, qty_on_dates.join(","), product.mtrl, trdr,product.max_qty]
           );
           res.status(200).json({ message: "product updated" });
         } else {
           let insert = await database.execute(
-            "insert into cart (mtrl,trdr,qty,availability,dates,qtys_on_dates) VALUES (?,?,?,?,?,?)",
-            [product.mtrl, trdr, qty, product.response.availability[0].available, datesarr.join(","), qty_on_dates.join(",")]
+            "insert into cart (mtrl,trdr,qty,availability,dates,qtys_on_dates,max_qty) VALUES (?,?,?,?,?,?,?)",
+            [product.mtrl, trdr, qty, product.response.availability[0].available, datesarr.join(","), qty_on_dates.join(","),product.max_qty]
           );
           res.status(200).json({ message: "product inserted" });
         }
