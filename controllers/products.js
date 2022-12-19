@@ -59,8 +59,8 @@ exports.addToCart = (req, res, next) => {
         }
         if (results[0].length > 0) {
           let update = await database.execute(
-            "update cart set availability=?,dates=?,qty=?,qtys_on_dates=? where mtrl=? and trdr=?,max_qty=?",
-            [product.response.availability[0].available, datesarr.join(","), qty, qty_on_dates.join(","), product.mtrl, trdr,product.max_qty]
+            "update cart set availability=?,dates=?,qty=?,qtys_on_dates=?,max_qty=? where mtrl=? and trdr=?",
+            [product.response.availability[0].available, datesarr.join(","), qty, qty_on_dates.join(","),product.max_qty, product.mtrl, trdr]
           );
           res.status(200).json({ message: "product updated" });
         } else {
