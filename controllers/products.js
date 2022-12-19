@@ -132,6 +132,7 @@ exports.getSingleCartItem = async (singelProduct) => {
       date: singelProduct.dates,
       availability: singelProduct.availability,
       qty_on_dates: singelProduct.qtys_on_dates,
+      max_qty : singelProduct.max_qty
     };
   } else {
     return {
