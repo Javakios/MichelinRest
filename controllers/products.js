@@ -35,6 +35,26 @@ exports.getAllProducts = (req, res, next) => {
     });
 };
 
+exports.updateQty = (req,res,next) =>{
+  const mtrl = req.body.mtrl;
+  const qty = req.body.qty;
+  const trdr = req.body.trdr;
+
+  if(!mtrl || !qty || !trdr){
+    res.status(402).json({message:'fill the required fields'});
+  }else{
+
+    database.execute('update cart set qty=? where mtrl=? and trdr=?',[qty,mtrl,qty])
+    .then(async results=>{
+        await this.fetchCart(req,res,next)
+    })
+    .catch(err=>{
+      if(!err.statusCode)err.statusCode =500;
+      next(err);
+    })
+
+  }
+}
 exports.addToCart = (req, res, next) => {
   const qty = req.body.qty;
   const product = req.body.product;
