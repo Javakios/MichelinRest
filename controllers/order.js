@@ -38,20 +38,21 @@ exports.xmlReq = async (req, res, next) => {
         // console.log(json)
         //  res.status(200).json({json})
         const response = await this.buetifyResponse(json);
+        const product = await this.findProductWithDates(cai, response);
+        if(product.mtrl){
         console.log(response);
-        console.log(
-          json.quote.OrderLine[0].OrderedArticle[0].ArticleDescription[0]
-            .ArticleDescriptionText[0]
-        );
         res.status(200).json({
           message: "Response",
           response: response,
           product_name:
             json.quote.OrderLine[0].OrderedArticle[0].ArticleDescription[0]
               .ArticleDescriptionText[0],
-          product: await this.findProductWithDates(cai, response),
+          product: product
         });
+      }else{
+        res.status(404).json({message:"No Product Found"});
       }
+    }
     );
   } else {
     res.status(402).json({ message: "fill the required fields" });
