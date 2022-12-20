@@ -29,7 +29,7 @@ exports.xmlReq = async (req, res, next) => {
     }
   } else if (cai && qty) {
     xml.parseString(
-      await this.michelinConnection(this.getBody(cai, qty), 2),
+      await this.michelinConnection(this.getBody(cai, qty), 'inquiry'),
       async (err, results) => {
         if (err) {
           throw err;
@@ -195,7 +195,7 @@ exports.getBody = (cai, qty) => {
 };
 
 exports.michelinConnection = async (body, id) => {
-  let message_type = id == 1 ? "order" : "inquiry";
+  let message_type=id;
   console.log(message_type);
   var config = {
     headers: {
@@ -299,7 +299,7 @@ exports.order = async (req, res, next) => {
   else {
     console.log(req.body.products[0]);
     xml.parseString(
-      await this.michelinConnection(this.getOrderBody(products), 1),
+      await this.michelinConnection(this.getOrderBody(products), 'order'),
       async (err, results) => {
         if (err) {
           throw err;

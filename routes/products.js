@@ -16,4 +16,7 @@ router.post('/updateGroup',productsController.updateGroup);
 router.post('/updateCategories',productsController.updateCategories);
 router.post('/clearCart',productsController.clearCart);
 router.post('/updateQty',productsController.updateQty);
+router.post('/save',productsController.saveForm);
+router.post('/getForm',productsController.getForm);
+router.post('/deleteForm',productsController.deleteForm);
 module.exports = router;

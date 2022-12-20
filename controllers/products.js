@@ -35,39 +35,44 @@ exports.getAllProducts = (req, res, next) => {
     });
 };
 
-exports.updateQty = (req,res,next) =>{
+exports.updateQty = (req, res, next) => {
   const mtrl = req.body.mtrl;
   const qty = req.body.qty;
   const trdr = req.body.trdr;
 
-  if(!mtrl || !qty || !trdr){
-    res.status(402).json({message:'fill the required fields'});
-  }else{
-
-    database.execute('update cart set qty=? where mtrl=? and trdr=?',[qty,mtrl,trdr])
-    .then(async results=>{
-        await this.fetchCart(req,res,next)
-    })
-    .catch(err=>{
-      if(!err.statusCode)err.statusCode =500;
-      next(err);
-    })
-
+  if (!mtrl || !qty || !trdr) {
+    res.status(402).json({ message: "fill the required fields" });
+  } else {
+    database
+      .execute("update cart set qty=? where mtrl=? and trdr=?", [
+        qty,
+        mtrl,
+        trdr,
+      ])
+      .then(async (results) => {
+        await this.fetchCart(req, res, next);
+      })
+      .catch((err) => {
+        if (!err.statusCode) err.statusCode = 500;
+        next(err);
+      });
   }
-}
+};
 exports.addToCart = (req, res, next) => {
   const qty = req.body.qty;
   const product = req.body.product;
-  const trdr = req.body.trdr
-  
+  const trdr = req.body.trdr;
 
   if (!trdr || !qty || !product) {
     res.status(402).json({ message: "Fill The Required Fields" });
   } else {
     console.log(product);
-    console.log(product.response)
+    console.log(product.response);
     database
-      .execute("select * from cart where mtrl=? and trdr=?", [product.mtrl, trdr])
+      .execute("select * from cart where mtrl=? and trdr=?", [
+        product.mtrl,
+        trdr,
+      ])
       .then(async (results) => {
         let data = this.correctDateQty(product.response.delivery_dates, qty);
         console.log(data);
@@ -80,13 +85,29 @@ exports.addToCart = (req, res, next) => {
         if (results[0].length > 0) {
           let update = await database.execute(
             "update cart set availability=?,dates=?,qty=?,qtys_on_dates=?,max_qty=? where mtrl=? and trdr=?",
-            [product.response.availability[0].available, datesarr.join(","), qty, qty_on_dates.join(","),product.max_qty, product.mtrl, trdr]
+            [
+              product.response.availability[0].available,
+              datesarr.join(","),
+              qty,
+              qty_on_dates.join(","),
+              product.max_qty,
+              product.mtrl,
+              trdr,
+            ]
           );
           res.status(200).json({ message: "product updated" });
         } else {
           let insert = await database.execute(
             "insert into cart (mtrl,trdr,qty,availability,dates,qtys_on_dates,max_qty) VALUES (?,?,?,?,?,?,?)",
-            [product.mtrl, trdr, qty, product.response.availability[0].available, datesarr.join(","), qty_on_dates.join(","),product.max_qty]
+            [
+              product.mtrl,
+              trdr,
+              qty,
+              product.response.availability[0].available,
+              datesarr.join(","),
+              qty_on_dates.join(","),
+              product.max_qty,
+            ]
           );
           res.status(200).json({ message: "product inserted" });
         }
@@ -153,7 +174,7 @@ exports.getSingleCartItem = async (singelProduct) => {
       date: singelProduct.dates,
       availability: singelProduct.availability,
       qty_on_dates: singelProduct.qtys_on_dates,
-      max_qty : singelProduct.max_qty
+      max_qty: singelProduct.max_qty,
     };
   } else {
     return {
@@ -180,7 +201,7 @@ exports.getSingleCartItem = async (singelProduct) => {
   }
 };
 
-exports.correctDateQty = (dates_arr, qty) => {  
+exports.correctDateQty = (dates_arr, qty) => {
   let qtys = +qty;
   let returnData = [];
   let qty_count = 0;
@@ -197,7 +218,7 @@ exports.correctDateQty = (dates_arr, qty) => {
       console.log(qtydata);
       returnData.push({
         qty_on_date: qtydata,
-        dates:dates_arr[i].delivery_dates,
+        dates: dates_arr[i].delivery_dates,
       });
       break;
     }
@@ -269,27 +290,28 @@ exports.updateStock = async (req, res, next) => {
     res.status(200).json({ message: "Stock Updated" });
   }
 };
-exports.updateCategories =async (req,res,next) =>{
+exports.updateCategories = async (req, res, next) => {
   const method = req.body.method;
-  if(!method) {
-    res.status(402).json({message:"fill the required fields"});
-  }else{
+  if (!method) {
+    res.status(402).json({ message: "fill the required fields" });
+  } else {
     let clientID = await this.login();
     clientID = await this.authenticate(clientID);
-    let categories = await this.mtrCategory(clientID)
+    let categories = await this.mtrCategory(clientID);
     await this.categoriesUpdate(categories);
-    res.status(200).json({message:"Categories Updated"});
+    res.status(200).json({ message: "Categories Updated" });
   }
-}
-exports.categoriesUpdate = async(categories) =>{
-  for(let i = 0 ; i < categories.totalcount;i ++){
+};
+exports.categoriesUpdate = async (categories) => {
+  for (let i = 0; i < categories.totalcount; i++) {
     await this.categoriesToDb(categories.rows[i]);
   }
-}
-exports.categoriesToDb = async(category) =>{
-  let select = await database.execute("select * from category where category=?", [
-    category.mtrcategory,
-  ]);
+};
+exports.categoriesToDb = async (category) => {
+  let select = await database.execute(
+    "select * from category where category=?",
+    [category.mtrcategory]
+  );
   try {
     if (select[0].length > 0) {
       let update = await database.execute(
@@ -305,8 +327,8 @@ exports.categoriesToDb = async(category) =>{
   } catch (err) {
     throw err;
   }
-}
-exports.mtrCategory = async(clientID) =>{
+};
+exports.mtrCategory = async (clientID) => {
   var data = JSON.stringify({
     service: "SqlData",
     clientID: clientID,
@@ -326,11 +348,11 @@ exports.mtrCategory = async(clientID) =>{
     responseType: "arraybuffer",
     reponseEncoding: "binary",
   };
-  let categories = await axios(config)
+  let categories = await axios(config);
   let decodedCategories = decoder.decode(categories.data);
   decodedCategories = JSON.parse(decodedCategories);
   return decodedCategories;
-}
+};
 exports.updateModel = async (req, res, next) => {
   const method = req.body.method;
 
@@ -371,28 +393,29 @@ exports.modelsToDb = async (model) => {
     throw err;
   }
 };
-exports.updateGroup = async (req,res,next) =>{
+exports.updateGroup = async (req, res, next) => {
   const method = req.body.method;
-  
-  if(!method){
-    res.status(402).json({mesage:"fill the required fields"});
-  }else{
+
+  if (!method) {
+    res.status(402).json({ mesage: "fill the required fields" });
+  } else {
     let clientID = await this.login();
     clientID = await this.authenticate(clientID);
     let group = await this.mtrGroup(clientID);
     await this.groupUpdate(group);
-    res.status(200).json({message:"Group Updated"});
+    res.status(200).json({ message: "Group Updated" });
   }
-}
-exports.groupUpdate =async (group) =>{
-  for(let i =0 ; i < group.totalcount;i++){
+};
+exports.groupUpdate = async (group) => {
+  for (let i = 0; i < group.totalcount; i++) {
     await this.groupToDb(group.rows[i]);
   }
-}
-exports.groupToDb = async(group) =>{
-  let select = await database.execute("select * from group_categories where group_id=?", [
-    group.mtrgroup,
-  ]);
+};
+exports.groupToDb = async (group) => {
+  let select = await database.execute(
+    "select * from group_categories where group_id=?",
+    [group.mtrgroup]
+  );
   try {
     if (select[0].length > 0) {
       let update = await database.execute(
@@ -408,8 +431,8 @@ exports.groupToDb = async(group) =>{
   } catch (err) {
     throw err;
   }
-}
-exports.mtrGroup = async(clientID) =>{
+};
+exports.mtrGroup = async (clientID) => {
   var data = JSON.stringify({
     service: "SqlData",
     clientID: clientID,
@@ -433,29 +456,30 @@ exports.mtrGroup = async(clientID) =>{
   let decodedGroup = decoder.decode(group.data);
   decodedGroup = JSON.parse(decodedGroup);
   return decodedGroup;
-}
-exports.updateManfctr =async (req,res,next )=>{
+};
+exports.updateManfctr = async (req, res, next) => {
   const method = req.body.method;
 
-  if(!method){
-    res.status(402).json({message:"fill the required fields"});
-  }else{
+  if (!method) {
+    res.status(402).json({ message: "fill the required fields" });
+  } else {
     let clientID = await this.login();
     clientID = await this.authenticate(clientID);
     let manfctr = await this.mtrlManfctr(clientID);
     await this.manfctrUpdate(manfctr);
-    res.status(200).json({message:"Manfctr Updated"});
+    res.status(200).json({ message: "Manfctr Updated" });
   }
-}
-exports.manfctrUpdate = async(manfctr)=>{
-  for(let i = 0 ; i < manfctr.totalcount; i++){
+};
+exports.manfctrUpdate = async (manfctr) => {
+  for (let i = 0; i < manfctr.totalcount; i++) {
     await this.manfctrToDb(manfctr.rows[i]);
   }
-}
-exports.manfctrToDb = async (manfctr) =>{
-  let select = await database.execute("select * from manfctr where manfctr_id=?", [
-    manfctr.mtrmanfctr,
-  ]);
+};
+exports.manfctrToDb = async (manfctr) => {
+  let select = await database.execute(
+    "select * from manfctr where manfctr_id=?",
+    [manfctr.mtrmanfctr]
+  );
   try {
     if (select[0].length > 0) {
       let update = await database.execute(
@@ -471,8 +495,8 @@ exports.manfctrToDb = async (manfctr) =>{
   } catch (err) {
     throw err;
   }
-}
-exports.mtrlManfctr = async(clientID) =>{
+};
+exports.mtrlManfctr = async (clientID) => {
   var data = JSON.stringify({
     service: "SqlData",
     clientID: clientID,
@@ -783,14 +807,105 @@ exports.mtrlUpdate = async (clientID) => {
   return decodedProducts;
 };
 
-exports.clearCart = (req,res,next) =>{
+exports.clearCart = (req, res, next) => {
   const trdr = req.body.trdr;
 
-  if(!trdr){
+  if (!trdr) {
+    res.status(402).json({ message: "fill the required fields" });
+  } else {
+    database.execute("delete from cart where trdr=?", [trdr]);
+    res.status(200).json({ message: "Cart Cleared", products: [] });
+  }
+};
+
+exports.saveForm = (req, res, next) => {
+  const products = req.body.products;
+  const token = req.body.token;
+  const form = req.body.form;
+
+  if (!products || !token || !form) {
+    res.status(402).json({ message: "fill the requried fields" });
+  } else {
+    database
+      .execute("select * from products_form where token =?", [token])
+      .then(async (results) => {
+        if (results[0].length > 0) {
+          // update
+          let update = await database.execute(
+            "update products_form set form=? where token=? ",
+            [JSON.stringify(form), token]
+          );
+        } else {
+          // insert
+          let insert = await database.execute(
+            "insert into products_form (form,token) VALUES (?,?)",
+            [JSON.stringify(form), token]
+          );
+        }
+        for (let i = 0; i < products.length; i++) {
+          let insert_prods = await database.execute(
+            "insert into products_table (product,token) VALUES(?,?)",
+            [JSON.stringify(products[i]), token]
+          );
+        }
+        res.status(200).json({ message: "form and table saved" });
+      })
+      .catch((err) => {
+        if (!err.statusCode) err.statusCode = 500;
+        next(err);
+      });
+  }
+};
+
+exports.getForm = (req,res,next) =>{
+  const token = req.body.token;
+
+  if(!token){
     res.status(402).json({message:"fill the required fields"});
   }else{
-      database.execute('delete from cart where trdr=?',[trdr])
-      res.status(200).json({message:"Cart Cleared",products:[]});
+    database.execute('select * from products_table where token=?',[token])
+      .then(async products=>{
+        let returnProd = [];
+        for(let i = 0 ; i<products[0].length ;i++){
+          returnProd[i] = JSON.parse(products[0][i].product);
+        }
+        let form = await database.execute('select * from products_form where token=?',[token]);
+        console.log(form[0][0].form)
+        let returnForm = JSON.parse(form[0][0].form);
+        console.log(returnForm);
+        res.status(200).json({message:"product",products:returnProd,form:returnForm});
+      })
+      .catch(err=>{
+        if(!err.statusCode) err.statusCode = 500;
+        next(err);
+      })
+
+  }
+}
+exports.deleteForm = (req,res,next)=>{
+
+  const token = req.body.token;
+
+  if(!token){
+    res.status(402).json({message:"fill the requried fields"});
+  }else{
+
+    database.execute('delete from products_form where token=?',[token])
+      .then(results=>{
+        database.execute('delete from products_table where token=?',[token])
+        .then(resulst=>{
+          res.status(200).json({message:"tables are clear",products:[]})
+        })
+        .catch(err=>{
+          if(!err.statusCode) err.statusCode =500;
+          next(err);
+        })
+      })
+      .catch(err=>{
+        if(!err.statusCode) err.statusCode = 500;
+        next(err);
+      })
+
   }
 
 }
