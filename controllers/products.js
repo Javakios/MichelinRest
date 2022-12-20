@@ -826,7 +826,9 @@ exports.saveForm = (req, res, next) => {
   if (!products || !token || !form) {
     res.status(402).json({ message: "fill the requried fields" });
   } else {
-    database
+    database.execute('delete from products_table where token=?',[token])
+    .then(results=>{
+      database
       .execute("select * from products_form where token =?", [token])
       .then(async (results) => {
         if (results[0].length > 0) {
@@ -850,6 +852,7 @@ exports.saveForm = (req, res, next) => {
         }
         res.status(200).json({ message: "form and table saved" });
       })
+    })
       .catch((err) => {
         if (!err.statusCode) err.statusCode = 500;
         next(err);
