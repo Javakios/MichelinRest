@@ -34,11 +34,14 @@ exports.xmlReq = async (req, res, next) => {
         if (err) {
           throw err;
         }
+    xml.parseString(
+      await this.michelinConnection(this.getOrderStatus(cai), "order_status"),
+      async (err, orderStatus) => {
+        if (err) throw err;
+        let infos = this.getImportantInfo(orderStatus);
         const json = JSON.parse(JSON.stringify(results, null, 4));
-        // console.log(json)
-        //  res.status(200).json({json})
         const response = await this.buetifyResponse(json);
-        const product = await this.findProductWithDates(cai, response);
+        const product = await this.findProductWithDates(cai, response,infos);
         if(product.mtrl){
         console.log(response);
         res.status(200).json({
@@ -52,13 +55,112 @@ exports.xmlReq = async (req, res, next) => {
       }else{
         res.status(404).json({message:"No Product Found"});
       }
+      }
+    );
+       
     }
     );
   } else {
     res.status(402).json({ message: "fill the required fields" });
   }
 };
-exports.findProductWithDates = async (cai, response) => {
+exports.getImportantInfo = (orderStatus) => {
+  let docID = [];
+  let confQty = [];
+  let delDate = [];
+  let orderdQty = [];
+  let cancellQty = [];
+  let reqDate = [];
+  for (let i = 0; i < orderStatus.order_status.ReferencedOrder.length; i++) {
+    docID[i] =
+      orderStatus.order_status.ReferencedOrder[
+        i
+      ].SupplierOrderNumber[0].DocumentID[0];
+    confQty[i] =
+      orderStatus.order_status.ReferencedOrder[
+        i
+      ].OrderLine[0].OrderedArticle[0].ScheduleDetails[0].ConfirmedQuantity[0].QuantityValue[0];
+    delDate[i] =
+      orderStatus.order_status.ReferencedOrder[
+        i
+      ].OrderLine[0].OrderedArticle[0].ScheduleDetails[0].DeliveryDate[0];
+    orderdQty[i] =
+      orderStatus.order_status.ReferencedOrder[
+        i
+      ].OrderLine[0].OrderedArticle[0].OrderedQuantity[0].QuantityValue[0];
+    cancellQty[i] =
+      orderStatus.order_status.ReferencedOrder[
+        i
+      ].OrderLine[0].OrderedArticle[0].ScheduleDetails[0].CancelledQuantity[0].QuantityValue[0];
+    reqDate[i] =
+      orderStatus.order_status.ReferencedOrder[
+        i
+      ].OrderLine[0].OrderedArticle[0].RequestedDeliveryDate[0];
+      return {
+        documentID : docID,
+        confirmedQuantity :confQty,
+        deliveryDates :delDate,
+        orderedQty :orderdQty,
+        canceledQty:cancellQty,
+        requestedDate :reqDate
+      }
+    // console.log(
+    //   orderStatus.order_status.ReferencedOrder[i].SupplierOrderNumber[0]
+    //     .DocumentID[0],
+    //   " ",
+    //   orderStatus.order_status.ReferencedOrder[i].OrderLine[0].OrderedArticle[0]
+    //     .ScheduleDetails[0].ConfirmedQuantity[0].QuantityValue[0],
+    //   " ",
+    //   orderStatus.order_status.ReferencedOrder[i].OrderLine[0].OrderedArticle[0]
+    //     .ScheduleDetails[0].DeliveryDate[0],
+    //   " ",
+    //   orderStatus.order_status.ReferencedOrder[i].OrderLine[0].OrderedArticle[0]
+    //     .OrderedQuantity[0].QuantityValue[0],
+    //   " ",
+    //   orderStatus.order_status.ReferencedOrder[i].OrderLine[0].OrderedArticle[0]
+    //     .ScheduleDetails[0].CancelledQuantity[0].QuantityValue[0],
+    //   " ",
+    //   orderStatus.order_status.ReferencedOrder[i].OrderLine[0].OrderedArticle[0]
+    //     .RequestedDeliveryDate[0]
+    // );
+  }
+};
+exports.getOrderStatus = (cai) => {
+  return `
+  <?xml version="1.0" encoding="UTF-8"?>
+  <order_status_request>
+      <DocumentID>C1</DocumentID>
+      <Variant>0</Variant>
+      <OrderDateFrom></OrderDateFrom>
+      <OrderDateTo></OrderDateTo>
+      <OrderingMethod></OrderingMethod>
+      <OrderStatusIndicator>1</OrderStatusIndicator>
+      <BuyerParty>
+          <PartyID>Q0040950</PartyID>
+          <AgencyCode>91</AgencyCode>
+      </BuyerParty>
+      <ReferencedOrder>
+          <SupplierOrderNumber>
+              <DocumentID></DocumentID>
+          </SupplierOrderNumber>
+          <OrderReference>
+              <DocumentID></DocumentID>
+          </OrderReference>
+          <Contract>
+              <DocumentID></DocumentID>
+          </Contract>
+          <OrderedArticle>
+              <ArticleIdentification>
+                  <BuyersArticleID></BuyersArticleID>
+                  <ManufacturersArticleID>${cai}</ManufacturersArticleID>
+                  <EANUCCArticleID></EANUCCArticleID>
+              </ArticleIdentification>
+          </OrderedArticle>
+      </ReferencedOrder>
+  </order_status_request>
+  `;
+};
+exports.findProductWithDates = async (cai, response,infos) => {
   let products = await database.execute(
     "select * from products where cai = ?",
     [cai]
@@ -84,6 +186,7 @@ exports.findProductWithDates = async (cai, response) => {
         discount: products[0][0].discount,
         image: products[0][0].image,
         response: response,
+        orderInfos : infos
       };
     } else {
       return {
@@ -195,18 +298,18 @@ exports.getBody = (cai, qty) => {
 };
 
 exports.michelinConnection = async (body, id) => {
-  let message_type=id;
+  let message_type = id;
   console.log(message_type);
   var config = {
     headers: {
       "Content-Type": "text/xml;charset=utf-8",
       Accept: "text/xml",
-      Authorization: "Basic TVdHMjExMzpNaWNoZWxpbj0x",
+      Authorization: "Basic TVdHMjExMzpBRCs5NWZlUg==",
       "Message-Type": message_type,
     },
   };
   let req = await axios.post(
-    "https://bibserve-indus.michelin.com/eb3/C1/AdhocServlet",
+    "https://bibserve.com/eb3/C1/AdhocServlet",
     body,
     config
   );
@@ -299,7 +402,7 @@ exports.order = async (req, res, next) => {
   else {
     console.log(req.body.products[0]);
     xml.parseString(
-      await this.michelinConnection(this.getOrderBody(products), 'order'),
+      await this.michelinConnection(this.getOrderBody(products), "order"),
       async (err, results) => {
         if (err) {
           throw err;
