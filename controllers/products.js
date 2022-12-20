@@ -874,8 +874,12 @@ exports.getForm = (req,res,next) =>{
         }
         let form = await database.execute('select * from products_form where token=?',[token]);
         console.log(form[0][0].form)
-        let returnForm = JSON.parse(form[0][0].form);
+
+        let returnForm = [];
+        if(form[0].length > 0){
+        returnForm=JSON.parse(form[0][0].form);
         console.log(returnForm);
+        }
         res.status(200).json({message:"product",products:returnProd,form:returnForm});
       })
       .catch(err=>{
