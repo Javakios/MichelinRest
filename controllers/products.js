@@ -873,7 +873,6 @@ exports.getForm = (req,res,next) =>{
           returnProd[i] = JSON.parse(products[0][i].product);
         }
         let form = await database.execute('select * from products_form where token=?',[token]);
-        console.log(form[0][0].form)
 
         let returnForm = [];
         if(form[0].length > 0){
