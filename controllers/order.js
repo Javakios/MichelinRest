@@ -79,6 +79,9 @@ exports.getImportantInfo = (orderStatus) => {
   let reqDate = [];
   console.log(orderStatus.order_status.ReferencedOrder.length);
   for (let i = 0; i < orderStatus.order_status.ReferencedOrder.length; i++) {
+    console.log(orderStatus.order_status.ReferencedOrder[i]);
+    console.log(orderStatus.order_status.ReferencedOrder[i].OrderLine[0].OrderedArticle[0]
+      .ScheduleDetails[0])
     docID[i] =
       orderStatus.order_status.ReferencedOrder[
         i
@@ -107,10 +110,17 @@ exports.getImportantInfo = (orderStatus) => {
       orderStatus.order_status.ReferencedOrder[
         i
       ].OrderLine[0].OrderedArticle[0].ScheduleDetails[0].CancelledQuantity[0].QuantityValue[0];
-    reqDate[i] =
-      orderStatus.order_status.ReferencedOrder[
+      if( orderStatus.order_status.ReferencedOrder[
         i
-      ].OrderLine[0].OrderedArticle[0].RequestedDeliveryDate[0];
+      ].OrderLine[0].OrderedArticle[0].RequestedDeliveryDate){
+        reqDate[i] =
+        orderStatus.order_status.ReferencedOrder[
+          i
+        ].OrderLine[0].OrderedArticle[0].RequestedDeliveryDate[0];
+      }else{
+        reqDate[i] ="ΛΟΓΙΚΑ ΠΑΡΑΔΩΘΗΚΕ"
+      }
+      
   }
   return {
     documentID: docID,
@@ -652,7 +662,7 @@ exports.getOrders = async (req, res, next) => {
           let name = this.getName(order);
           let cai = this.getCai(order);
           let info = this.getImportantInfo(order);
-          res.status(200).json({ order, name, cai, info });
+          res.status(200).json({message:"OK",order_info:info,name:name,cai:cai });
         }
       }
     );
