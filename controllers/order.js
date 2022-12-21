@@ -29,36 +29,42 @@ exports.xmlReq = async (req, res, next) => {
     }
   } else if (cai && qty) {
     xml.parseString(
-      await this.michelinConnection(this.getBody(cai, qty), 'inquiry'),
+      await this.michelinConnection(this.getBody(cai, qty), "inquiry"),
       async (err, results) => {
         if (err) {
           throw err;
         }
-    xml.parseString(
-      await this.michelinConnection(this.getOrderStatus(cai), "order_status"),
-      async (err, orderStatus) => {
-        if (err) throw err;
-        let infos = this.getImportantInfo(orderStatus);
-        const json = JSON.parse(JSON.stringify(results, null, 4));
-        const response = await this.buetifyResponse(json);
-        const product = await this.findProductWithDates(cai, response,infos);
-        if(product.mtrl){
-        console.log(response);
-        res.status(200).json({
-          message: "Response",
-          response: response,
-          product_name:
-            json.quote.OrderLine[0].OrderedArticle[0].ArticleDescription[0]
-              .ArticleDescriptionText[0],
-          product: product
-        });
-      }else{
-        res.status(404).json({message:"No Product Found"});
+        xml.parseString(
+          await this.michelinConnection(
+            this.getOrderStatus(cai),
+            "order_status"
+          ),
+          async (err, orderStatus) => {
+            if (err) throw err;
+            let infos = this.getImportantInfo(orderStatus);
+            const json = JSON.parse(JSON.stringify(results, null, 4));
+            const response = await this.buetifyResponse(json);
+            const product = await this.findProductWithDates(
+              cai,
+              response,
+              infos
+            );
+            if (product.mtrl) {
+              console.log(response);
+              res.status(200).json({
+                message: "Response",
+                response: response,
+                product_name:
+                  json.quote.OrderLine[0].OrderedArticle[0]
+                    .ArticleDescription[0].ArticleDescriptionText[0],
+                product: product,
+              });
+            } else {
+              res.status(404).json({ message: "No Product Found" });
+            }
+          }
+        );
       }
-      }
-    );
-       
-    }
     );
   } else {
     res.status(402).json({ message: "fill the required fields" });
@@ -71,6 +77,7 @@ exports.getImportantInfo = (orderStatus) => {
   let orderdQty = [];
   let cancellQty = [];
   let reqDate = [];
+  console.log(orderStatus.order_status.ReferencedOrder.length);
   for (let i = 0; i < orderStatus.order_status.ReferencedOrder.length; i++) {
     docID[i] =
       orderStatus.order_status.ReferencedOrder[
@@ -80,10 +87,18 @@ exports.getImportantInfo = (orderStatus) => {
       orderStatus.order_status.ReferencedOrder[
         i
       ].OrderLine[0].OrderedArticle[0].ScheduleDetails[0].ConfirmedQuantity[0].QuantityValue[0];
-    delDate[i] =
-      orderStatus.order_status.ReferencedOrder[
-        i
-      ].OrderLine[0].OrderedArticle[0].ScheduleDetails[0].DeliveryDate[0];
+    if (
+      orderStatus.order_status.ReferencedOrder[i].OrderLine[0].OrderedArticle[0]
+        .ScheduleDetails[0].DeliveryDate
+    ) {
+      delDate[i] =
+        orderStatus.order_status.ReferencedOrder[
+          i
+        ].OrderLine[0].OrderedArticle[0].ScheduleDetails[0].DeliveryDate[0];
+    } else {
+      delDate[i] = "Δεν ΠΡΟΚΕΙΤΑΙ ΝΑ ΤΟ ΠΑΡΕΙ ΠΟΤΕ";
+    }
+
     orderdQty[i] =
       orderStatus.order_status.ReferencedOrder[
         i
@@ -96,34 +111,15 @@ exports.getImportantInfo = (orderStatus) => {
       orderStatus.order_status.ReferencedOrder[
         i
       ].OrderLine[0].OrderedArticle[0].RequestedDeliveryDate[0];
-      return {
-        documentID : docID,
-        confirmedQuantity :confQty,
-        deliveryDates :delDate,
-        orderedQty :orderdQty,
-        canceledQty:cancellQty,
-        requestedDate :reqDate
-      }
-    // console.log(
-    //   orderStatus.order_status.ReferencedOrder[i].SupplierOrderNumber[0]
-    //     .DocumentID[0],
-    //   " ",
-    //   orderStatus.order_status.ReferencedOrder[i].OrderLine[0].OrderedArticle[0]
-    //     .ScheduleDetails[0].ConfirmedQuantity[0].QuantityValue[0],
-    //   " ",
-    //   orderStatus.order_status.ReferencedOrder[i].OrderLine[0].OrderedArticle[0]
-    //     .ScheduleDetails[0].DeliveryDate[0],
-    //   " ",
-    //   orderStatus.order_status.ReferencedOrder[i].OrderLine[0].OrderedArticle[0]
-    //     .OrderedQuantity[0].QuantityValue[0],
-    //   " ",
-    //   orderStatus.order_status.ReferencedOrder[i].OrderLine[0].OrderedArticle[0]
-    //     .ScheduleDetails[0].CancelledQuantity[0].QuantityValue[0],
-    //   " ",
-    //   orderStatus.order_status.ReferencedOrder[i].OrderLine[0].OrderedArticle[0]
-    //     .RequestedDeliveryDate[0]
-    // );
   }
+  return {
+    documentID: docID,
+    confirmedQuantity: confQty,
+    deliveryDates: delDate,
+    orderedQty: orderdQty,
+    canceledQty: cancellQty,
+    requestedDate: reqDate,
+  };
 };
 exports.getOrderStatus = (cai) => {
   return `
@@ -160,7 +156,7 @@ exports.getOrderStatus = (cai) => {
   </order_status_request>
   `;
 };
-exports.findProductWithDates = async (cai, response,infos) => {
+exports.findProductWithDates = async (cai, response, infos) => {
   let products = await database.execute(
     "select * from products where cai = ?",
     [cai]
@@ -186,7 +182,7 @@ exports.findProductWithDates = async (cai, response,infos) => {
         discount: products[0][0].discount,
         image: products[0][0].image,
         response: response,
-        orderInfos : infos
+        orderInfos: infos,
       };
     } else {
       return {
@@ -304,12 +300,12 @@ exports.michelinConnection = async (body, id) => {
     headers: {
       "Content-Type": "text/xml;charset=utf-8",
       Accept: "text/xml",
-      Authorization: "Basic TVdHMjExMzpBRCs5NWZlUg==",
+      Authorization: "Basic TVdHMjExMzpNaWNoZWxpbj0x",
       "Message-Type": message_type,
     },
   };
   let req = await axios.post(
-    "https://bibserve.com/eb3/C1/AdhocServlet",
+    "https://bibserve-indus.michelin.com/eb3/C1/AdhocServlet",
     body,
     config
   );
@@ -604,4 +600,157 @@ exports.authenticate = async (clientID) => {
     if (!err.statusCode) err.statusCode = 500;
     throw err;
   }
+};
+
+exports.getOrders = async (req, res, next) => {
+  const fromDate = req.body.from;
+  const toDate = req.body.to;
+  const docID = req.body.docID;
+  // if doc id search ordes with this documentID aka Parastatiko
+  if (docID) {
+    xml.parseString(
+      await this.michelinConnection(
+        this.getOrderStatusByDocId(docID),
+        "order_status"
+      ),
+      async (err, order) => {
+        if (err) {
+          if (!err.statusCode) err.statusCode = 500;
+          throw err;
+        }
+        console.log(order.order_status.ReferencedOrder);
+
+        if (!order.order_status.ReferencedOrder) {
+          res.status(200).json({ message: "No Order Found" });
+        } else {
+          let info = this.getImportantInfo(order);
+          console.log(info);
+          let cai = this.getCai(order);
+          let name = this.getName(order);
+          res
+            .status(200)
+            .json({ message: "OK", order_info: info, cai: cai, name: name });
+        }
+      }
+    );
+  }
+  // else if fromDate and toDate search orders within theese two dates
+  else if (fromDate && toDate) {
+    xml.parseString(
+      await this.michelinConnection(
+        this.getOrderStatusByDates(fromDate, toDate),
+        "order_status"
+      ),
+      async (err, order) => {
+        if (err) {
+          if (!err.statusCode) err.statusCode = 500;
+          throw err;
+        }
+        if (!order.order_status.ReferencedOrder) {
+          res.status(200).json({ message: "No Order Found" });
+        } else {
+          let name = this.getName(order);
+          let cai = this.getCai(order);
+          let info = this.getImportantInfo(order);
+          res.status(200).json({ order, name, cai, info });
+        }
+      }
+    );
+  }
+  // else throw error for not fill the requried fields
+  else {
+    res.status(402).json({ message: "fill the required fields" });
+  }
+};
+
+exports.getCai = (order) => {
+  let cai = [];
+  for (let i = 0; i < order.order_status.ReferencedOrder.length; i++) {
+    cai[i] =
+      order.order_status.ReferencedOrder[
+        i
+      ].OrderLine[0].OrderedArticle[0].ArticleIdentification[0].ManufacturersArticleID[0];
+  }
+  return cai;
+};
+exports.getName = (order) => {
+  let name = [];
+  for (let i = 0; i < order.order_status.ReferencedOrder.length; i++) {
+    name[i] =
+      order.order_status.ReferencedOrder[
+        i
+      ].OrderLine[0].OrderedArticle[0].ArticleDescription[0].ArticleDescriptionText[0];
+  }
+  return name;
+};
+
+exports.getOrderStatusByDocId = (docID) => {
+  return `
+  <?xml version="1.0" encoding="UTF-8"?>
+  <order_status_request>
+      <DocumentID>C1</DocumentID>
+      <Variant>0</Variant>
+      <OrderDateFrom></OrderDateFrom>
+      <OrderDateTo></OrderDateTo>
+      <OrderingMethod></OrderingMethod>
+      <OrderStatusIndicator>1</OrderStatusIndicator>
+      <BuyerParty>
+          <PartyID>Q0040950</PartyID>
+          <AgencyCode>91</AgencyCode>
+      </BuyerParty>
+      <ReferencedOrder>
+          <SupplierOrderNumber>
+              <DocumentID>${docID}</DocumentID>
+          </SupplierOrderNumber>
+          <OrderReference>
+              <DocumentID></DocumentID>
+          </OrderReference>
+          <Contract>
+              <DocumentID></DocumentID>
+          </Contract>
+          <OrderedArticle>
+              <ArticleIdentification>
+                  <BuyersArticleID></BuyersArticleID>
+                  <ManufacturersArticleID></ManufacturersArticleID>
+                  <EANUCCArticleID></EANUCCArticleID>
+              </ArticleIdentification>
+          </OrderedArticle>
+      </ReferencedOrder>
+  </order_status_request>
+  `;
+};
+exports.getOrderStatusByDates = (from, to) => {
+  return `
+  <?xml version="1.0" encoding="UTF-8"?>
+  <order_status_request>
+      <DocumentID>C1</DocumentID>
+      <Variant>0</Variant>
+      <OrderDateFrom>${from}</OrderDateFrom>
+      <OrderDateTo>${to}</OrderDateTo>
+      <OrderingMethod></OrderingMethod>
+      <OrderStatusIndicator>1</OrderStatusIndicator>
+      <BuyerParty>
+          <PartyID>Q0040950</PartyID>
+          <AgencyCode>91</AgencyCode>
+      </BuyerParty>
+      <ReferencedOrder>
+          <SupplierOrderNumber>
+              <DocumentID></DocumentID>
+          </SupplierOrderNumber>
+          <OrderReference>
+              <DocumentID></DocumentID>
+          </OrderReference>
+          <Contract>
+              <DocumentID></DocumentID>
+          </Contract>
+          <OrderedArticle>
+              <ArticleIdentification>
+                  <BuyersArticleID></BuyersArticleID>
+                  <ManufacturersArticleID></ManufacturersArticleID>
+                  <EANUCCArticleID></EANUCCArticleID>
+              </ArticleIdentification>
+          </OrderedArticle>
+      </ReferencedOrder>
+  </order_status_request>
+  `;
 };
